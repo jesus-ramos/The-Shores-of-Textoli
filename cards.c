@@ -397,7 +397,7 @@ static const char *play_brainbridge_supplies_intel(struct game_state *game)
     action = strtok(line, sep);
     if (action == NULL) {
         free(line);
-        return "Invalid cation for [ Brainbridge Supplies Intel ]";
+        return "Invalid action for [ Brainbridge Supplies Intel ]";
     }
 
     idx_str = strtok(NULL, sep);
