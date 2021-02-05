@@ -316,6 +316,84 @@ struct card a_show_of_force = {
     .playable = trip_allies_active
 };
 
+static const char *play_tribute_paid(struct game_state *game)
+{
+    char *line;
+    char *from_str;
+    char *type_str;
+    char *to_str;
+    enum locations from_loc;
+    enum move_type from_type;
+    enum locations to_loc;
+
+    cprintf(BOLD, "Choose location to move frigate from and location to move "
+            "to. [location] [harbor/patrol] [algiers/tunis/tangier]\n");
+    prompt();
+    line = input_getline();
+
+    from_str = strtok(line, sep);
+    if (from_str == NULL) {
+        free(line);
+        return "No location to move frigate from provided";
+    }
+
+    type_str = strtok(NULL, sep);
+    if (type_str == NULL) {
+        free(line);
+        return "No harbor or patrol zone specified";
+    }
+
+    to_str = strtok(NULL, sep);
+    if (to_str == NULL) {
+        free(line);
+        return "Destination harbor not specified";
+    }
+
+    from_loc = parse_location(from_str);
+    if (from_loc == NUM_LOCATIONS) {
+        free(line);
+        return "Invalid location to move frigate from";
+    }
+
+    from_type = parse_move_type(type_str);
+    if (from_type == INVALID_MOVE_TYPE) {
+        free(line);
+        return "Invalid harbor or patrol zone specified";
+    }
+
+    to_loc = parse_location(to_str);
+    if (to_loc != ALGIERS && to_loc != TUNIS && to_loc != TANGIER) {
+        free(line);
+        return "Invalid destination location, must be one of algiers, tunis, "
+            "or tangier";
+    }
+
+    if (from_type == PATROL_ZONE) {
+        if (!has_patrol_zone(from_loc)) {
+            free(line);
+            return "Location to move from does not have a patrol zone";
+        }
+        if (game->patrol_frigates[from_loc] == 0) {
+            free(line);
+            return "No frigates at location to move";
+        }
+        game->patrol_frigates[from_loc]--;
+    } else {
+        if (game->us_frigates[from_loc] == 0) {
+            free(line);
+            return "no frigates at location to move";
+        }
+        game->us_frigates[from_loc]--;
+    }
+
+    game->us_frigates[to_loc]++;
+    game->t_allies[to_loc] = 0;
+    game->pirated_gold += 2;
+
+    free(line);
+    return NULL;
+}
+
 struct card tribute_paid = {
     .name = "Tribute Paid",
     .text = "Move one American frigate to the "
@@ -325,7 +403,8 @@ struct card tribute_paid = {
     "Supply. The Tripolitan player receives "
     "two Gold Coins.",
     .remove_after_use = false,
-    .playable = trip_allies_active
+    .playable = trip_allies_active,
+    .play = play_tribute_paid
 };
 
 static bool constantinople_tribute_playable(struct game_state *game)
