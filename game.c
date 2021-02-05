@@ -53,6 +53,9 @@ static void advance_game_round(struct game_state *game)
         frig_idx = year_to_frigate_idx(game->year);
         game->us_frigates[GIBRALTAR] += game->turn_track_frigates[frig_idx];
         game->turn_track_frigates[frig_idx] = 0;
+
+        game->t_frigates += game->t_turn_frigates[frig_idx];
+        game->t_turn_frigates[frig_idx] = 0;
     } else {
         game->season++;
     }

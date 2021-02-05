@@ -364,13 +364,28 @@ static bool check_hamets_army_created(struct game_state *game)
     return false;
 }
 
+static const char *play_recruit_bedouins(struct game_state *game)
+{
+    int i;
+
+    for (i = 0; i < US_INFANTRY_LOCS; i++) {
+        if (game->arab_infantry[i] > 0 || game->marine_infantry[i] > 0) {
+            game->arab_infantry[i] += 2;
+            break;
+        }
+    }
+
+    return NULL;
+}
+
 struct card hamet_recruits_bedouins = {
     .name = "Hamet Recruits Bedouins",
     .text = "Playable if Hamet’s Army has been "
     "created. Place two additional Arab "
     "infantry with Hamet’s Army",
     .remove_after_use = false,
-    .playable = check_hamets_army_created
+    .playable = check_hamets_army_created,
+    .play = play_recruit_bedouins
 };
 
 static bool brainbridge_playable(struct game_state *game)
@@ -406,7 +421,7 @@ static const char *play_brainbridge_supplies_intel(struct game_state *game)
         return "No card selected";
     }
 
-    idx = strtol(action, NULL, 10);
+    idx = strtol(idx_str, NULL, 10);
     if (errno != 0 || idx < 0 || idx >= game->discard_size) {
         free(line);
         return "Invalid card number";
@@ -490,6 +505,27 @@ static bool burn_the_philly_playable(struct game_state *game)
     return game->t_frigates > 0;
 }
 
+static const char *play_burn_the_philly(struct game_state *game)
+{
+    bool roll_again = check_play_battle_card(game, &daring_decatur);
+    unsigned int roll = rolld6();
+
+    if (roll_again) {
+        roll = max(roll, rolld6());
+    }
+
+    if (roll == 3 || roll == 4) {
+        game->t_frigates--;
+        if (game->year < 1806) {
+            game->t_turn_frigates[year_to_frigate_idx(game->year + 1)]++;
+        }
+    } else if (roll == 5 || roll == 6) {
+        game->t_frigates--;
+    }
+
+    return NULL;
+}
+
 struct card burn_the_philadelphia = {
     .name = "Burn The Philadelphia",
     .text = "Playable if there is at least one Tripolitan "
@@ -501,8 +537,103 @@ struct card burn_the_philadelphia = {
     "Turn Track. "
     "5-6: A Tripolitan frigate is sunk.",
     .remove_after_use = true,
-    .playable = burn_the_philly_playable
+    .playable = burn_the_philly_playable,
+    .play = play_burn_the_philly
 };
+
+static void sink_corsairs_at(struct game_state *game, enum locations location,
+                             int count)
+{
+    unsigned int *corsairs = tripoli_corsair_ptr(game, location);
+
+    if (*corsairs < count) {
+        *corsairs = 0;
+    } else {
+        *corsairs -= count;
+    }
+}
+
+static const char *sink_corsairs(struct game_state *game, int count)
+{
+    char *line;
+    char *loc_str;
+    int loc_count = 1;
+    enum locations loc[2];
+
+    /* If there's only one choice don't bother prompting */
+    if (game->t_corsairs_gibraltar == 0) {
+        sink_corsairs_at(game, TRIPOLI, 2);
+        return NULL;
+    }
+
+    /* There's probably a simpler way to handle this since there's only 2
+     * locations where Tripolitan corsairs can be */
+    cprintf(BOLD WHITE, "Choose locations to sink up to 2 corsairs from\n");
+    prompt();
+    line = input_getline();
+
+    loc_str = strtok(line, sep);
+    if (loc_str == NULL) {
+        free(line);
+        return "No locations provided";
+    }
+
+    loc[0] = parse_location(loc_str);
+    if (!tripoli_corsair_location(loc[0])) {
+        free(line);
+        return "Invalid location";
+    }
+
+    if (count == 2) {
+        loc_str = strtok(NULL, sep);
+        if (loc_str != NULL) {
+            loc[1] = parse_location(loc_str);
+            if (!tripoli_corsair_location(loc[1])) {
+                free(line);
+                return "Invalid location";
+            }
+            loc_count++;
+        }
+    }
+
+    loc_str = strtok(NULL, sep);
+    if (loc_str != NULL) {
+        free(line);
+        return "Too many locations provided";
+    }
+
+    if (loc_count == 1) {
+        sink_corsairs_at(game, loc[0], count);
+    } else {
+        sink_corsairs_at(game, loc[0], 1);
+        sink_corsairs_at(game, loc[1], 1);
+    }
+
+    free(line);
+    return NULL;
+}
+
+static const char *play_launch_the_intrepid(struct game_state *game)
+{
+    bool roll_again = check_play_battle_card(game, &daring_decatur);
+    unsigned int roll = rolld6();
+
+    if (roll_again) {
+        roll = max(roll, rolld6());
+    }
+
+    if (roll == 3 || roll == 4) {
+        return sink_corsairs(game, 1);
+    } else if (roll == 5 || roll == 6) {
+        if (game->t_frigates > 0) {
+            game->t_frigates--;
+        } else {
+            return sink_corsairs(game, 2);
+        }
+    }
+
+    return NULL;
+}
 
 struct card launch_the_intrepid = {
     .name = "Launch The Intrepid",
@@ -513,7 +644,8 @@ struct card launch_the_intrepid = {
     "frigate available, two Tripolitan corsairs "
     "are sunk.",
     .remove_after_use = true,
-    .playable = always_playable
+    .playable = always_playable,
+    .play = play_launch_the_intrepid
 };
 
 static bool hamets_army_in_alexandria(struct game_state *game)

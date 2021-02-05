@@ -54,7 +54,7 @@ struct game_state {
     unsigned int t_corsairs_gibraltar;
     unsigned int t_allies[TRIP_ALLIES]; /* Corsair count at each location */
     unsigned int t_infantry[TRIP_INFANTRY_LOCS];
-    /* TODO tripoli turn track frigates */
+    unsigned int t_turn_frigates[END_YEAR - START_YEAR];
 
 #define TBOT_EVENT_MAX (6) /* 4 starting cards + 2 storms */
     struct card **tbot_event_line;
@@ -257,6 +257,27 @@ static inline bool has_trip_infantry(enum locations location)
 static inline bool has_us_infantry(enum locations location)
 {
     return location >= US_INFANTRY_START && location <= US_INFANTRY_END;
+}
+
+static inline bool tripoli_corsair_location(enum locations location)
+{
+    return location == TRIPOLI || location == GIBRALTAR;
+}
+
+static inline unsigned int *tripoli_corsair_ptr(struct game_state *game,
+                                         enum locations location)
+{
+    assert(tripoli_corsair_location(location));
+
+    if (location == TRIPOLI) {
+        return &game->t_corsairs_tripoli;
+    }
+    return &game->t_corsairs_gibraltar;
+}
+
+static inline unsigned int max(unsigned int a, unsigned int b)
+{
+    return (a > b) ? a : b;
 }
 
 void init_game_state(struct game_state *game, unsigned int seed);
