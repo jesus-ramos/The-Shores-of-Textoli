@@ -44,13 +44,19 @@ bool check_play_battle_card(struct game_state *game, struct card *card)
 {
     int idx = card_in_hand(game, card);
     char msg[32];
+    bool play;
 
     if (idx == -1) {
         return false;
     }
 
     snprintf(msg, sizeof(msg), "Play [ %s ] as a battle card?", card->name);
-    return yn_prompt(msg);
+    play = yn_prompt(msg);
+    if (play) {
+        remove_card_from_game(game, idx);
+    }
+
+    return play;
 }
 
 /* Core US cards */
