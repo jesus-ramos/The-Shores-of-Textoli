@@ -30,6 +30,7 @@ static const char *discard_command(struct game_state *game)
     char *idx_str = strtok(NULL, sep);
     char *action;
     int card_idx;
+    const char *ret;
 
     if (idx_str == NULL) {
         return "Missing card number";
@@ -50,8 +51,11 @@ static const char *discard_command(struct game_state *game)
         if (!build_gunboat(game)) {
             return "Cannot build any more gunboats";
         }
-    } else if (strcmp(action, "move") == 0 || strcmp(action, "n") == 0) {
-        return game_move_ships(game, 2);
+    } else if (strcmp(action, "move") == 0 || strcmp(action, "m") == 0) {
+        ret = game_move_ships(game, 2);
+        if (ret) {
+            return ret;
+        }
     } else {
         return "Invalid discard command";
     }
