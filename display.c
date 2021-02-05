@@ -222,6 +222,14 @@ static void print_year_track(struct game_state *game)
                         cprintf(BLUE, "F");
                     }
                 }
+
+                frigates = game->t_turn_frigates[year_to_frigate_idx(year)];
+                if (frigates > 0) {
+                    printf(" ");
+                    for (i = 0; i < frigates; i++) {
+                        cprintf(RED, "F");
+                    }
+                }
             }
             cprintf(WHITE, ")");
         }
