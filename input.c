@@ -196,6 +196,8 @@ const char *parse_damage_assignment(struct game_state *game,
     int destroy_frigates = 0;
     int damage_frigates = 0;
     int destroy_gunboats = 0;
+    int destroy_marines = 0;
+    int destroy_arabs = 0;
     int len;
     int i;
     const char *err;
@@ -204,13 +206,10 @@ const char *parse_damage_assignment(struct game_state *game,
         return NULL;
     }
 
-    if (auto_resolve_damage(game, location, type, num_hits)) {
-        return NULL;
-    }
-
     cprintf(BOLD WHITE, "Assign %d hits for battle at %s %s:"
             "(F to destroy a frigate, f to damage a frigate, "
-            "G/g to destroy a gunboat)\n", num_hits,
+            "G/g to destroy a gunboat, A/a for arab infantry, "
+            "M/m for US marines)\n", num_hits,
             location_str(location), move_type_str(type));
     prompt();
     line = input_getline();
@@ -223,14 +222,18 @@ const char *parse_damage_assignment(struct game_state *game,
             damage_frigates++;
         } else if (line[i] == 'F') {
             destroy_frigates++;
-        } else if (line[i] != ' ') {
+        } else if (line[i] == 'M' || line[i] == 'm') {
+            destroy_marines++;
+        } else if (line[i] == 'A' || line[i] == 'a') {
+            destroy_arabs++;
+        }else if (line[i] != ' ') {
             free(line);
             return "Invalid character found for assigning damage";
         }
     }
 
     err = assign_damage(game, location, type, destroy_frigates, damage_frigates,
-                        destroy_gunboats);
+                        destroy_gunboats, destroy_marines, destroy_arabs);
 
     free(line);
     return err;
@@ -242,6 +245,11 @@ const char *parse_assign_gunboats(struct game_state *game,
 {
     char *line;
     int gunboats;
+
+    /* No boats to assign */
+    if (game->used_gunboats == game->us_gunboats) {
+        return NULL;
+    }
 
     cprintf(BOLD WHITE, "Choose how many gunboats to bring to the battle at "
             "%s %s\n", location_str(location), move_type_str(type));

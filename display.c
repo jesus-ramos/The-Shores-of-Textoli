@@ -15,13 +15,22 @@ static void print_harbor(struct game_state *game, enum locations location)
     int idx;
     int padlen;
 
-    cprintf(BOLD WHITE, "Harbor: ");
+    if (location_battle(game, location) != BTYPE_NONE) {
+        cprintf(BOLD ITALIC RED, "Harbor: ");
+    } else {
+        cprintf(BOLD WHITE, "Harbor: ");
+    }
     for (i = 0; i < game->us_frigates[location]; i++) {
         cprintf(BOLD BLUE, "F");
         count++;
     }
-    /* TODO handle displaying gunboats at battle location for assaul on tripoli */
-    if (location == MALTA) {
+
+    if (location == game->battle_loc) {
+        for (i = 0; i < game->assigned_gunboats; i++) {
+            cprintf(BOLD BLUE, "G");
+            count++;
+        }
+    } else if (location == MALTA && game->battle_loc == NUM_LOCATIONS) {
         for (i = 0; i < game->us_gunboats - game->used_gunboats; i++) {
             cprintf(BOLD BLUE, "G");
             count++;

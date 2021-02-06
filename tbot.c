@@ -239,3 +239,9 @@ struct card mercenaries_desert = {
     "take an Arab infantry unit and return it "
     "to the Supply"
 };
+
+int tbot_resolve_naval_battle(struct game_state *game, enum locations location)
+{
+    /* TODO */
+    return 0;
+}

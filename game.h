@@ -36,6 +36,13 @@ enum seasons {
     WINTER
 };
 
+enum battle_type {
+    BTYPE_NONE,
+    NAVAL_BATTLE,
+    NAVAL_BOMBARDMENT,
+    GROUND_BATTLE
+};
+
 #define INFANTRY_DICE 1
 #define FRIGATE_DICE 2
 #define GUNBOAT_DICE 1
@@ -92,6 +99,7 @@ struct game_state {
     /* Battle info */
     unsigned int used_gunboats;
     unsigned int assigned_gunboats;
+    enum locations battle_loc;
     bool victory_or_death;
 };
 
@@ -154,7 +162,7 @@ static inline bool is_date_on_or_past(struct game_state *game, unsigned int year
 
 static inline unsigned int rolld6()
 {
-    return rand() + 1 % 6;
+    return rand() % 6 + 1;
 }
 
 static inline const char *season_str(enum seasons season)
@@ -311,8 +319,9 @@ const char *game_move_ships(struct game_state *game, int allowed_moves);
 void game_handle_intercept(struct game_state *game, enum locations location);
 const char *assign_damage(struct game_state *game, enum locations location,
                           enum move_type type, int destroy_frigates,
-                          int damage_frigates, int destroy_gunboats);
-bool auto_resolve_damage(struct game_state *game, enum locations location,
-                         enum move_type type, int num_hits);
+                          int damage_frigates, int destroy_gunboats,
+                          int destroy_marines, int destroy_arabs);
+enum battle_type location_battle(struct game_state *game,
+                                 enum locations location);
 
 #endif /* GAME_H */
