@@ -20,9 +20,14 @@ static void print_harbor(struct game_state *game, enum locations location)
         cprintf(BOLD BLUE, "F");
         count++;
     }
+    /* TODO handle displaying gunboats at battle location for assaul on tripoli */
     if (location == MALTA) {
-        for (i = 0; i < game->us_gunboats; i++) {
+        for (i = 0; i < game->us_gunboats - game->used_gunboats; i++) {
             cprintf(BOLD BLUE, "G");
+            count++;
+        }
+        for (i = 0; i < game->used_gunboats; i++) {
+            cprintf(ITALIC BLUE, "G");
             count++;
         }
     }

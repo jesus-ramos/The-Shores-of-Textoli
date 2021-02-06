@@ -215,6 +215,45 @@ static bool assault_on_tripoli_playable(struct game_state *game)
     return is_date_on_or_past(game, 1805, FALL);
 }
 
+static const char *play_assault_on_tripoli(struct game_state *game)
+{
+    int frig_count = 0;
+    int i;
+    int dest;
+    bool marines_played;
+
+    game->victory_or_death = true;
+
+    for (i = 0; i < NUM_LOCATIONS; i++) {
+        frig_count += game->us_frigates[i];
+        game->us_frigates[i] = 0;
+        if (has_patrol_zone(i)) {
+            frig_count += game->patrol_frigates[i];
+            game->patrol_frigates[i] = 0;
+        }
+    }
+
+    /* Don't bother prompting, we're going in */
+    game->assigned_gunboats = game->us_gunboats;
+
+    dest = us_infantry_idx(TRIPOLI);
+    /* Check as a courtesy, if the card is in hand you'd probably just play it */
+    marines_played = check_play_battle_card(game, &send_in_the_marines);
+    if (marines_played) {
+        game->marine_infantry[dest] += 3;
+    }
+
+    i = us_infantry_idx(BENGHAZI);
+    dest = us_infantry_idx(TRIPOLI);
+
+    game->marine_infantry[dest] += game->marine_infantry[i];
+    game->marine_infantry[i] = 0;
+    game->arab_infantry[dest] += game->arab_infantry[i];
+    game->arab_infantry[i] = 0;
+
+    return NULL;
+}
+
 struct card assault_on_tripoli = {
     .name = "Assault on Tripoli",
     .text = "Playable in Fall of 1805 or later. Move "
@@ -224,8 +263,9 @@ struct card assault_on_tripoli = {
     "play Send in the Marines. Resolve the "
     "Assault on Tripoli! "
     "Victory or Death!",
-    .remove_after_use = true, /* Win or lose */
-    .playable = assault_on_tripoli_playable
+    .remove_after_use = true,
+    .playable = assault_on_tripoli_playable,
+    .play = play_assault_on_tripoli
 };
 
 static const char *play_naval_movement(struct game_state *game)

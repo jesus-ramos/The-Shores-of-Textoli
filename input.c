@@ -186,3 +186,81 @@ const char *parse_moves(struct frigate_move *moves, int *num_moves)
     free(line);
     return NULL;
 }
+
+const char *parse_damage_assignment(struct game_state *game,
+                                    enum locations location,
+                                    enum move_type type,
+                                    int num_hits)
+{
+    char *line;
+    int destroy_frigates = 0;
+    int damage_frigates = 0;
+    int destroy_gunboats = 0;
+    int len;
+    int i;
+    const char *err;
+
+    if (num_hits == 0) {
+        return NULL;
+    }
+
+    if (auto_resolve_damage(game, location, type, num_hits)) {
+        return NULL;
+    }
+
+    cprintf(BOLD WHITE, "Assign %d hits for battle at %s %s:"
+            "(F to destroy a frigate, f to damage a frigate, "
+            "G/g to destroy a gunboat)\n", num_hits,
+            location_str(location), move_type_str(type));
+    prompt();
+    line = input_getline();
+
+    len = strlen(line);
+    for (i = 0; i < len; i++) {
+        if (line[i] == 'g' || line[i] == 'G') {
+            destroy_gunboats++;
+        } else if (line[i] == 'f') {
+            damage_frigates++;
+        } else if (line[i] == 'F') {
+            destroy_frigates++;
+        } else if (line[i] != ' ') {
+            free(line);
+            return "Invalid character found for assigning damage";
+        }
+    }
+
+    err = assign_damage(game, location, type, destroy_frigates, damage_frigates,
+                        destroy_gunboats);
+
+    free(line);
+    return err;
+}
+
+const char *parse_assign_gunboats(struct game_state *game,
+                                  enum locations location,
+                                  enum move_type type)
+{
+    char *line;
+    int gunboats;
+
+    cprintf(BOLD WHITE, "Choose how many gunboats to bring to the battle at "
+            "%s %s\n", location_str(location), move_type_str(type));
+    prompt();
+    line = input_getline();
+
+    gunboats = strtol(line, NULL, 10);
+    if (errno != 0) {
+        free(line);
+        return "Invalid number provided";
+    }
+
+    if (gunboats > (game->us_gunboats - game->used_gunboats)) {
+        free(line);
+        return "Too many gunboats chosen";
+    }
+
+    game->assigned_gunboats = gunboats;
+
+    free(line);
+    return NULL;
+}

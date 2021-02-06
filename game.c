@@ -300,3 +300,59 @@ void game_loop(struct game_state *game)
         advance_game_round(game);
     }
 }
+
+/* TODO: Could clean up some of the calculations here as they're shared */
+const char *assign_damage(struct game_state *game, enum locations location,
+                          enum move_type type, int destroy_frigates,
+                          int damage_frigates, int destroy_gunboats)
+{
+    unsigned int *frigate_ptr;
+    int total_dmg;
+    int total_hp;
+
+    if (destroy_gunboats > game->assigned_gunboats) {
+        return "Not enough participating gunboats to destroy";
+    }
+
+    if (type == HARBOR) {
+        frigate_ptr = &game->us_frigates[location];
+    } else {
+        assert(has_patrol_zone(location));
+        frigate_ptr = &game->patrol_frigates[location];
+    }
+
+    total_dmg = damage_frigates + 2 * destroy_frigates;
+    total_hp = *frigate_ptr * 2 + game->used_gunboats;
+
+    if (total_dmg > total_hp) {
+        return "Assigning too much damage";
+    }
+
+    *frigate_ptr -= destroy_frigates + damage_frigates;
+    if (game->year <= 1805) {
+        game->turn_track_frigates[year_to_frigate_idx(game->year + 1)] +=
+            damage_frigates;
+    }
+
+    game->us_gunboats -= destroy_gunboats;
+    game->used_gunboats -= destroy_gunboats;
+
+    return NULL;
+}
+
+bool auto_resolve_damage(struct game_state *game, enum locations location,
+                         enum move_type type, int num_hits)
+{
+    unsigned int *frigate_ptr = (type == HARBOR) ?
+        &game->us_frigates[location] : &game->patrol_frigates[location];
+    int total_hp = *frigate_ptr * 2 + game->used_gunboats;
+
+    if (total_hp <= num_hits) {
+        *frigate_ptr = 0;
+        game->us_gunboats -= game->assigned_gunboats;
+        game->used_gunboats -= game->assigned_gunboats;
+        return true;
+    }
+
+    return false;
+}

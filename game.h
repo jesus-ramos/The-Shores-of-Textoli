@@ -88,10 +88,16 @@ struct game_state {
     unsigned int hand_size;
     struct card *us_discard[US_DECK_SIZE];
     unsigned int discard_size;
+
+    /* Battle info */
+    unsigned int used_gunboats;
+    unsigned int assigned_gunboats;
+    bool victory_or_death;
 };
 
 #define MAX_FRIGATE_MOVES (8)
 
+/* Could use a rename */
 enum move_type {
     HARBOR,
     PATROL_ZONE,
@@ -163,7 +169,20 @@ static inline const char *season_str(enum seasons season)
         case WINTER:
             return "Winter";
         default:
-            assert(true);
+            assert(false);
+            return "";
+    }
+}
+
+static inline char *move_type_str(enum move_type type)
+{
+    switch (type) {
+        case PATROL_ZONE:
+            return "Patrol Zone";
+        case HARBOR:
+            return "Harbor";
+        default:
+            assert(false);
             return "";
     }
 }
@@ -190,7 +209,7 @@ static inline const char *location_str(enum locations location)
         case MALTA:
             return "Malta";
         default:
-            assert(true);
+            assert(false);
             return "";
     }
 }
@@ -290,5 +309,10 @@ void game_loop(struct game_state *game);
 bool build_gunboat(struct game_state *game);
 const char *game_move_ships(struct game_state *game, int allowed_moves);
 void game_handle_intercept(struct game_state *game, enum locations location);
+const char *assign_damage(struct game_state *game, enum locations location,
+                          enum move_type type, int destroy_frigates,
+                          int damage_frigates, int destroy_gunboats);
+bool auto_resolve_damage(struct game_state *game, enum locations location,
+                         enum move_type type, int num_hits);
 
 #endif /* GAME_H */
