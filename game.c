@@ -30,7 +30,6 @@ void init_game_state(struct game_state *game, unsigned int seed)
         game->turn_track_frigates[year_to_frigate_idx(year)] = 1;
     }
 
-    /* For now setup the solo game */
     game->t_corsairs_tripoli = 5;
     game->t_corsairs_gibraltar = 2;
     for (i = 0; i < TRIP_INFANTRY_LOCS; i++) {
@@ -39,7 +38,7 @@ void init_game_state(struct game_state *game, unsigned int seed)
 
     init_game_cards(game);
 
-    /* Setup the tbot */
+    /* TODO Setup the tbot */
 }
 
 void game_handle_intercept(struct game_state *game, enum locations location)
@@ -324,7 +323,8 @@ const char *assign_damage(struct game_state *game, enum locations location,
     total_dmg = damage_frigates + 2 * destroy_frigates;
     total_hp = *frigate_ptr * 2 + game->used_gunboats;
 
-    if (total_dmg > total_hp) {
+    if (total_dmg > total_hp ||
+        (damage_frigates + destroy_frigates > *frigate_ptr)) {
         return "Assigning too much damage";
     }
 
