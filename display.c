@@ -128,12 +128,26 @@ static void print_locations(struct game_state *game)
 
 static void print_card(struct game_state *game, struct card *card, int idx)
 {
+    const char *remove = "";
+
+    if (card->battle_card) {
+            remove = " If played as a battle card, this card is removed from "
+                "the game.";
+    } else if (card->remove_after_use) {
+        remove = " After playing as an event, this card is removed from "
+                "the game.";
+    }
+
     if (card->playable(game)) {
         cprintf(BOLD, "%d) [%s]", idx, card->name);
     } else {
-        cprintf(BOLD RED, "%d) [%s]", idx, card->name);
+        if (card->battle_card) {
+            cprintf(ITALIC RED, "%d) [%s]", idx, card->name);
+        } else {
+            cprintf(BOLD STRIKETHROUGH RED, "%d) [%s]", idx, card->name);
+        }
     }
-    cprintf(ITALIC WHITE, " - %s\n", card->text);
+    cprintf(ITALIC WHITE, " - %s%s\n", card->text, remove);
 }
 
 static void print_hand(struct game_state *game)

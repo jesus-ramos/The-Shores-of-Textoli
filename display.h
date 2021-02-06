@@ -17,9 +17,10 @@
 /* Extended color code */
 #define ORANGE "\x1B[38;5;208m"
 
-#define UNDERLINE "\e[4m"
-#define BOLD      "\e[1m"
-#define ITALIC    "\e[3m"
+#define UNDERLINE     "\e[4m"
+#define BOLD          "\e[1m"
+#define ITALIC        "\e[3m"
+#define STRIKETHROUGH "\e[9m"
 
 #define cprintf(color, ...)                     \
     printf(color);                              \

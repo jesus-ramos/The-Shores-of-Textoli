@@ -36,6 +36,11 @@ enum seasons {
     WINTER
 };
 
+#define INFANTRY_DICE 1
+#define FRIGATE_DICE 2
+#define GUNBOAT_DICE 1
+#define CORSAIR_DICE 1
+
 struct game_state {
     unsigned int seed;
 #define START_YEAR (1801)
@@ -284,5 +289,6 @@ void init_game_state(struct game_state *game, unsigned int seed);
 void game_loop(struct game_state *game);
 bool build_gunboat(struct game_state *game);
 const char *game_move_ships(struct game_state *game, int allowed_moves);
+void game_handle_intercept(struct game_state *game, enum locations location);
 
 #endif /* GAME_H */

@@ -17,6 +17,11 @@ struct card {
     play_fn play;
 };
 
+static inline bool always_playable(struct game_state *game)
+{
+    return true;
+}
+
 /* Battle cards usable in battle resolution */
 extern struct card lieutenant_in_pursuit;
 extern struct card prebles_boys;

@@ -42,9 +42,63 @@ void init_game_state(struct game_state *game, unsigned int seed)
     /* Setup the tbot */
 }
 
+void game_handle_intercept(struct game_state *game, enum locations location)
+{
+    int frig_count = 0;
+    bool lieutenant_played;
+    int rolls = 0;
+    int successes = 0;
+    unsigned int *corsairs;
+
+    assert(has_patrol_zone(location));
+
+    if (location == TRIPOLI && game->swedish_frigates_active) {
+        frig_count += 2;
+        rolls += 2 * FRIGATE_DICE;
+    }
+
+    frig_count += game->patrol_frigates[location];
+
+    if (frig_count == 0) {
+        return;
+    }
+
+    lieutenant_played = check_play_battle_card(game, &lieutenant_in_pursuit);
+    if (lieutenant_played) {
+        rolls += 3 * game->patrol_frigates[location];
+    } else {
+        rolls += FRIGATE_DICE * game->patrol_frigates[location];
+    }
+
+    while (rolls--) {
+        if (rolld6() == 6) {
+            successes++;
+        }
+    }
+
+    if (has_trip_allies(location)) {
+        corsairs = &game->t_allies[location];
+    } else if (location == TRIPOLI) {
+        corsairs = &game->t_corsairs_tripoli;
+    } else { /* Gibraltar */
+        corsairs = &game->t_corsairs_gibraltar;
+    }
+
+    if (successes > *corsairs) {
+        *corsairs = 0;
+    } else {
+        *corsairs -= successes;
+    }
+}
+
 static void advance_game_round(struct game_state *game)
 {
     unsigned int frig_idx;
+
+    if (game->year == END_YEAR && game->season == WINTER) {
+        cprintf(ITALIC WHITE, "Game ended in a draw!\n");
+        exit(0);
+    }
 
     if (game->season == WINTER) {
         game->year++;
@@ -151,7 +205,7 @@ const char *game_move_ships(struct game_state *game, int allowed_moves)
 
     move_frigates(game, moves, num_moves);
 
-    /* TODO Resolve battles */
+    /* TODO Resolve battles and move gunboats */
 
     return NULL;
 }
@@ -170,11 +224,6 @@ bool build_gunboat(struct game_state *game)
 
     return false;
 }
-
-#define INFANTRY_DICE 1
-#define FRIGATE_DICE 2
-#define GUNBOAT_DICE 1
-#define CORSAIR_DICE 1
 
 static void game_draw_cards(struct game_state *game)
 {
@@ -238,6 +287,8 @@ void game_loop(struct game_state *game)
             err_msg = discard_down(game);
             goto display;
         }
+
+        /* TODO Check for battles to resolve and hop back up to display */
 
         err_msg = handle_input(game);
         if (err_msg) {

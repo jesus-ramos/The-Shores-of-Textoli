@@ -7,11 +7,6 @@
 #include "game.h"
 #include "input.h"
 
-static bool always_playable(struct game_state *game)
-{
-    return true;
-}
-
 static bool battle_playable(struct game_state *game)
 {
     return false;
@@ -122,7 +117,8 @@ struct card lieutenant_in_pursuit = {
     .text = "Playable when making an Interception "
     "Roll. Each American frigate may roll "
     "three dice instead of two.",
-    .playable = battle_playable
+    .playable = battle_playable,
+    .battle_card = true
 };
 
 struct card prebles_boys = {
@@ -133,7 +129,8 @@ struct card prebles_boys = {
     "during the Assault on Tripoli, only roll "
     "the extra dice in the first round of the "
     "naval battle.",
-    .playable = battle_playable
+    .playable = battle_playable,
+    .battle_card = true
 };
 
 struct card daring_decatur = {
@@ -142,7 +139,8 @@ struct card daring_decatur = {
     "or Launch the Intrepid is the active event "
     "card this turn. Roll two dice instead of "
     "one and choose the preferred result.",
-    .playable = battle_playable
+    .playable = battle_playable,
+    .battle_card = true
 };
 
 struct card send_in_the_marines = {
@@ -150,7 +148,8 @@ struct card send_in_the_marines = {
     .text = "Playable if Assault on Tripoli is the active "
     "event card this turn. Place three Marine "
     "infantry units in the city of Tripoli.",
-    .playable = battle_playable
+    .playable = battle_playable,
+    .battle_card = true
 };
 
 struct card lieutenant_leads_the_charge = {
@@ -159,7 +158,8 @@ struct card lieutenant_leads_the_charge = {
     "Select one Marine infantry unit to roll "
     "three dice instead of one during each "
     "round of combat.",
-    .playable = battle_playable
+    .playable = battle_playable,
+    .battle_card = true
 };
 
 struct card marine_sharpshooters = {
@@ -167,7 +167,8 @@ struct card marine_sharpshooters = {
     .text = "Playable at the start of a land battle. All "
     "Marine infantry units hit on a roll of 5 "
     "or 6 for each round of combat.",
-    .playable = battle_playable
+    .playable = battle_playable,
+    .battle_card = true
 };
 
 /* US card deck */
