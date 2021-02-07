@@ -38,7 +38,7 @@ static int card_in_hand(struct game_state *game, struct card *card)
 bool check_play_battle_card(struct game_state *game, struct card *card)
 {
     int idx = card_in_hand(game, card);
-    char msg[32];
+    char msg[128];
     bool play;
 
     if (idx == -1) {
@@ -176,13 +176,11 @@ struct card marine_sharpshooters = {
 static bool peace_treaty_playable(struct game_state *game)
 {
     unsigned int trip_derne_idx = trip_infantry_idx(DERNE);
-    unsigned int us_derne_idx = us_infantry_idx(DERNE);
 
     return is_date_on_or_past(game, 1805, FALL) &&
         game->t_allies[ALGIERS] == 0 && game->t_allies[TANGIER] == 0 &&
         game->t_allies[TUNIS] == 0 &&
-        (game->marine_infantry[us_derne_idx] > 0 ||
-         game->arab_infantry[us_derne_idx] > 0) &&
+        hamets_army_at(game, DERNE) &&
         game->t_infantry[trip_derne_idx] == 0;
 }
 
@@ -477,9 +475,11 @@ static bool check_hamets_army_created(struct game_state *game)
 {
     int i;
 
-    for (i = 0; i < US_INFANTRY_LOCS; i++)
-        if (game->arab_infantry[i] > 0 || game->marine_infantry[i] > 0)
+    for (i = US_INFANTRY_START; i < US_INFANTRY_END; i++) {
+        if (hamets_army_at(game, i)) {
             return true;
+        }
+    }
 
     return false;
 }
@@ -488,8 +488,8 @@ static const char *play_recruit_bedouins(struct game_state *game)
 {
     int i;
 
-    for (i = 0; i < US_INFANTRY_LOCS; i++) {
-        if (game->arab_infantry[i] > 0 || game->marine_infantry[i] > 0) {
+    for (i = US_INFANTRY_START; i < US_INFANTRY_END; i++) {
+        if (hamets_army_at(game, i)) {
             game->arab_infantry[i] += 2;
             break;
         }
@@ -770,9 +770,7 @@ struct card launch_the_intrepid = {
 
 static bool hamets_army_in_alexandria(struct game_state *game)
 {
-    unsigned int idx = us_infantry_idx(ALEXANDRIA);
-
-    return game->marine_infantry[idx] > 0 || game->arab_infantry[idx] > 0;
+    return hamets_army_at(game, ALEXANDRIA);
 }
 
 struct card eaton_attacks_derne = {
@@ -787,9 +785,7 @@ struct card eaton_attacks_derne = {
 
 static bool hamets_army_in_derne(struct game_state *game)
 {
-    unsigned int idx = us_infantry_idx(DERNE);
-
-    return game->marine_infantry[idx] > 0 || game->arab_infantry[idx] > 0;
+    return hamets_army_at(game, DERNE);
 }
 
 struct card eaton_attacks_benghazi = {

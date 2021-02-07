@@ -284,6 +284,14 @@ static inline bool has_us_infantry(enum locations location)
     return location >= US_INFANTRY_START && location <= US_INFANTRY_END;
 }
 
+static inline bool hamets_army_at(struct game_state *game,
+                                  enum locations location)
+{
+    int idx = us_infantry_idx(location);
+
+    return game->marine_infantry[idx] > 0 || game->arab_infantry[idx] > 0;
+}
+
 static inline bool tripoli_corsair_location(enum locations location)
 {
     return location == TRIPOLI || location == GIBRALTAR;

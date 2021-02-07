@@ -5,17 +5,68 @@
 
 /* Tbot core cards */
 
+static void activate_ally(struct game_state *game, enum locations location)
+{
+    assert(location < TRIP_ALLIES);
+    game->t_allies[location] = 3;
+}
+
+static void pirate_raid(struct game_state *game, enum locations location);
+
+static bool yusuf_playable(struct game_state *game)
+{
+    int ally_count = 0;
+    int i;
+
+    for (i = 0; i < TRIP_ALLIES; i++) {
+        if (game->t_allies[i] > 0) {
+            ally_count++;
+        }
+    }
+
+    return (game->year >= 1801 && game->year <= 1804 && ally_count >= 2) ||
+        (game->year >= 1805 && ally_count >= 1);
+}
+
+static const char *play_yusuf(struct game_state *game)
+{
+    int i;
+
+    pirate_raid(game, TRIPOLI);
+    for (i = 0; i < TRIP_ALLIES; i++) {
+        if (game->t_allies[i] > 0) {
+            pirate_raid(game, i);
+        }
+    }
+
+    return NULL;
+}
+
 struct card yusuf_qaramanli = {
     .name = "Yusuf Qaramanli",
     .text = "Pirate Raid with the corsairs from the "
     "harbor of Tripoli and the corsairs from "
     "the harbor of each active ally (Algiers, "
     "Tangier, Tunis).",
+    .playable = yusuf_playable,
+    .play = play_yusuf
 };
 
 static bool break_out_playable(struct game_state *game)
 {
-    return game->t_corsairs_gibraltar > 0;
+    return game->t_corsairs_gibraltar > 0 &&
+        (game->patrol_frigates[GIBRALTAR] == 0 ||
+         (game->year == 1801 && game->season == WINTER));
+}
+
+static const char *play_break_out(struct game_state *game)
+{
+    game_handle_intercept(game, GIBRALTAR);
+
+    game->t_corsairs_tripoli += game->t_corsairs_gibraltar;
+    game->t_corsairs_gibraltar = 0;
+
+    return NULL;
 }
 
 struct card murad_reis_breaks_out = {
@@ -25,14 +76,22 @@ struct card murad_reis_breaks_out = {
     "Tripoli. Any American frigates in the "
     "naval patrol zone of Gibraltar may first "
     "make an Interception Roll.",
-    .playable = break_out_playable
+    .playable = break_out_playable,
+    .play = play_break_out
 };
 
 static bool send_aid_playable(struct game_state *game)
 {
-    int idx = us_infantry_idx(DERNE);
+    return hamets_army_at(game, DERNE);
+}
 
-    return game->marine_infantry[idx] > 0 || game->arab_infantry[idx] > 0;
+static const char *play_send_aid(struct game_state *game)
+{
+    game->t_frigates++;
+    game->t_corsairs_tripoli += 2;
+    game->t_infantry[trip_infantry_idx(TRIPOLI)] += 2;
+
+    return NULL;
 }
 
 struct card constantinople_sends_aid = {
@@ -42,7 +101,8 @@ struct card constantinople_sends_aid = {
     "two Tripolitan corsairs in the harbor of "
     "Tripoli. Place two Tripolitan infantry "
     "units in the city of Tripoli.",
-    .playable = send_aid_playable
+    .playable = send_aid_playable,
+    .play = play_send_aid
 };
 
 /* Tbot deck */
@@ -115,13 +175,28 @@ struct card tripoli_attacks = {
     "the battle."
 };
 
+static bool sweden_pays_tribute_playable(struct game_state *game)
+{
+    return game->year >= 1803 && game->swedish_frigates_active;
+}
+
+static const char *play_sweden_pays_tribute(struct game_state *game)
+{
+    game->swedish_frigates_active = false;
+    game->pirated_gold += 2;
+
+    return NULL;
+}
+
 struct card sweden_pays_tribute = {
     .name = "Sweden Pays Tribute",
     .text = "Playable if it is 1803 or later and there "
     "are Swedish frigates in the naval patrol "
     "zone of Tripoli. Return the Swedish "
     "frigates to the Supply and receive two "
-    "Gold Coins."
+    "Gold Coins.",
+    .playable = sweden_pays_tribute_playable,
+    .play = play_sweden_pays_tribute
 };
 
 struct card tripoli_acquires_corsairs = {
@@ -294,40 +369,6 @@ static inline bool five_corsair_check(struct game_state *game)
     return game->t_corsairs_tripoli >= 5;
 }
 
-static void activate_ally(struct game_state *game, enum locations location)
-{
-    assert(location < TRIP_ALLIES);
-    game->t_allies[location] = 3;
-}
-
-static void pirate_raid(struct game_state *game, enum locations location)
-{
-    int i;
-    int successes = 0;
-    int raid_count;
-
-    game_handle_intercept(game, location);
-
-    raid_count = (location == TRIPOLI) ? game->t_corsairs_tripoli :
-        game->t_allies[location];
-
-    if (tbot_check_play_battle_card(&happy_hunting)) {
-        raid_count += 3;
-    }
-
-    for (i = 0; i < raid_count; i++) {
-        if (rolld6() == 6) {
-            successes++;
-        }
-    }
-
-    game->pirated_gold += successes;
-
-    if (successes > 0 && tbot_check_play_battle_card(&merchant_ship_converted)) {
-        game->t_corsairs_tripoli++;
-    }
-}
-
 static bool tbot_draw_play_card(struct game_state *game)
 {
     int card_idx;
@@ -369,6 +410,34 @@ static bool tbot_process_event_line(struct game_state *game)
     }
 
     return false;
+}
+
+static void pirate_raid(struct game_state *game, enum locations location)
+{
+    int i;
+    int successes = 0;
+    int raid_count;
+
+    game_handle_intercept(game, location);
+
+    raid_count = (location == TRIPOLI) ? game->t_corsairs_tripoli :
+        game->t_allies[location];
+
+    if (tbot_check_play_battle_card(&happy_hunting)) {
+        raid_count += 3;
+    }
+
+    for (i = 0; i < raid_count; i++) {
+        if (rolld6() == 6) {
+            successes++;
+        }
+    }
+
+    game->pirated_gold += successes;
+
+    if (successes > 0 && tbot_check_play_battle_card(&merchant_ship_converted)) {
+        game->t_corsairs_tripoli++;
+    }
 }
 
 static bool tbot_can_raid(struct game_state *game, enum locations location)
