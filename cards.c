@@ -407,6 +407,11 @@ static const char *play_tribute_paid(struct game_state *game)
             "or tangier";
     }
 
+    if (game->t_allies[to_loc] == 0) {
+        free(line);
+        return "No tripolitan allies at that location";
+    }
+
     if (from_type == PATROL_ZONE) {
         if (!has_patrol_zone(from_loc)) {
             free(line);
@@ -609,6 +614,16 @@ static bool corsairs_confiscated_playable(struct game_state *game)
     return game->t_corsairs_gibraltar > 0;
 }
 
+static const char *play_corsairs_confiscated(struct game_state *game)
+{
+    /* We don't need to remove Murad Reis Breaks out as setting the corsairs to
+     * zero will cause the playable() check to fail
+    */
+    game->t_corsairs_gibraltar = 0;
+
+    return NULL;
+}
+
 struct card corsairs_confiscated = {
     .name = "Corsairs Confiscated",
     .text = "Playable if there are Tripolitan corsairs in "
@@ -617,7 +632,8 @@ struct card corsairs_confiscated = {
     "and remove the Murad Reis Breaks Out "
     "card from the game.",
     .remove_after_use = true,
-    .playable = corsairs_confiscated_playable
+    .playable = corsairs_confiscated_playable,
+    .play = play_corsairs_confiscated
 };
 
 static bool burn_the_philly_playable(struct game_state *game)
