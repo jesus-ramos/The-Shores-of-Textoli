@@ -145,11 +145,11 @@ static void print_card(struct game_state *game, struct card *card, int idx)
     const char *remove = "";
 
     if (card->battle_card) {
-            remove = " If played as a battle card, this card is removed from "
-                "the game.";
+        remove = " If played as a battle card, this card is removed from "
+            "the game.";
     } else if (card->remove_after_use) {
         remove = " After playing as an event, this card is removed from "
-                "the game.";
+            "the game.";
     }
 
     if (card->playable(game)) {
