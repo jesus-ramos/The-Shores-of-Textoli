@@ -385,6 +385,8 @@ static bool tbot_draw_play_card(struct game_state *game)
     tbot_deck[card_idx] = tbot_deck[tbot_deck_size - 1];
     tbot_deck[--tbot_deck_size] = NULL;
 
+    assert(card && card->playable && card->play);
+
     if (card->playable(game)) {
         assert(card->play);
         card->play(game);
@@ -440,7 +442,7 @@ static void pirate_raid(struct game_state *game, enum locations location)
     }
 }
 
-static bool tbot_can_raid(struct game_state *game, enum locations location)
+static int tbot_raid_score(struct game_state *game, enum locations location)
 {
     int corsairs;
     int frigs;
@@ -456,26 +458,60 @@ static bool tbot_can_raid(struct game_state *game, enum locations location)
         frigs += 2;
     }
 
-    return corsairs >= 3 && corsairs > frigs;
+    if (corsairs >= 3 && corsairs > frigs) {
+        return corsairs - frigs;
+    }
+
+    return -1;
 }
 
 static void raid_or_build(struct game_state *game)
 {
     int i;
+    int scores[TRIP_ALLIES + 1];
+    int max_score = -1;
+    int score_count = 0;
+    int score_idx = -1;
 
     for (i = 0; i < TRIP_ALLIES; i++) {
-        if (tbot_can_raid(game, i)) {
-            pirate_raid(game, i);
-            return;
+        scores[i] = tbot_raid_score(game, i);
+    }
+
+    scores[TRIP_ALLIES] = tbot_raid_score(game, TRIPOLI);
+
+    for (i = 0; i <= TRIP_ALLIES; i++) {
+        if (scores[i] > max_score) {
+            max_score = scores[i];
+            score_count = 1;
+        } else if (scores[i] == max_score) {
+            score_count++;
         }
     }
 
-    if (tbot_can_raid(game, TRIPOLI)) {
-        pirate_raid(game, TRIPOLI);
+    if (max_score == -1) {
+        game->t_corsairs_tripoli++;
         return;
     }
 
-    game->t_corsairs_tripoli++;
+    assert(score_count > 0);
+    score_count = rand() % score_count + 1;
+
+    for (i = 0; i <= TRIP_ALLIES; i++) {
+        if (scores[i] == max_score) {
+            if (--score_count == 0) {
+                score_idx = i;
+                break;
+            }
+        }
+    }
+
+    assert(score_idx != -1);
+
+    if (score_idx == TRIP_ALLIES) {
+        pirate_raid(game, TRIPOLI);
+    } else {
+        pirate_raid(game, score_idx);
+    }
 }
 
 void tbot_do_turn(struct game_state *game)
