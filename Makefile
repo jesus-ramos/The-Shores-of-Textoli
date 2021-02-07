@@ -2,6 +2,11 @@ CC	   = gcc
 CFLAGS = -Wall
 LD	   = $(CC)
 
+DEBUG ?= 1
+ifeq ($(DEBUG), 1)
+	CFLAGS += -g
+endif
+
 BIN = sot
 SRCS = $(wildcard *.c)
 OBJS = ${SRCS:.c=.o}
