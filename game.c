@@ -263,8 +263,6 @@ const char *game_move_ships(struct game_state *game, int allowed_moves)
 
     move_frigates(game, moves, num_moves);
 
-    /* TODO Resolve battles and move gunboats */
-
     return NULL;
 }
 
@@ -365,7 +363,7 @@ static const char *resolve_naval_battle(struct game_state *game,
         }
     }
 
-    damage = tbot_resolve_naval_battle(game, location);
+    damage = tbot_resolve_naval_battle(game, location, successes);
     display_game(game); /* After resolving the bot battle turn refresh the
                          * display */
     while ((err = parse_damage_assignment(game, location, HARBOR, damage))) {
@@ -420,8 +418,56 @@ static const char *resolve_naval_bombardment(struct game_state *game,
 static const char *resolve_ground_combat(struct game_state *game,
                                          enum locations location)
 {
-    /* TODO */
-    assert(false);
+    int idx;
+    int successes;
+    int dice;
+    int roll;
+    int damage;
+    const char *err;
+    enum battle_type btype;
+    bool lieutenant_played =
+        check_play_battle_card(game, &lieutenant_leads_the_charge);
+    bool sharpshooters_played =
+        check_play_battle_card(game, &marine_sharpshooters);
+
+    assert(has_us_infantry(location));
+
+    while (true) {
+        idx = us_infantry_idx(location);
+        successes = 0;
+        dice = game->marine_infantry[idx];
+        /* We assume you never kill the super marine */
+        if (lieutenant_played && game->marine_infantry[idx] > 0) {
+            dice += 2;
+        }
+
+        while (dice--) {
+            roll = rolld6();
+            if (roll == 6 || (sharpshooters_played && roll == 5)) {
+                successes++;
+            }
+        }
+
+        dice = game->arab_infantry[idx];
+        while (dice--) {
+            if (rolld6() == 6) {
+                successes++;
+            }
+        }
+
+        damage = tbot_resolve_ground_combat(game, location, successes);
+        display_game(game);
+
+        while ((err = parse_damage_assignment(game, location, HARBOR, damage))) {
+            cprintf(BOLD RED, "%s\n", err);
+        }
+
+        btype = location_battle(game, location);
+        if (btype == BTYPE_NONE) {
+            break;
+        }
+        assert(btype == GROUND_BATTLE);
+    }
 
     return NULL;
 }

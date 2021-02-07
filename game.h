@@ -222,7 +222,7 @@ static inline const char *location_str(enum locations location)
     }
 }
 
-static void str_tolower(char *str)
+static inline void str_tolower(char *str)
 {
     int i;
 
@@ -297,7 +297,7 @@ static inline bool tripoli_corsair_location(enum locations location)
 }
 
 static inline unsigned int *tripoli_corsair_ptr(struct game_state *game,
-                                         enum locations location)
+                                                enum locations location)
 {
     assert(tripoli_corsair_location(location));
 

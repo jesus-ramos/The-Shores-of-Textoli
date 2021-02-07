@@ -240,7 +240,15 @@ struct card mercenaries_desert = {
     "to the Supply"
 };
 
-int tbot_resolve_naval_battle(struct game_state *game, enum locations location)
+int tbot_resolve_naval_battle(struct game_state *game, enum locations location,
+                              int damage)
+{
+    /* TODO */
+    return 0;
+}
+
+int tbot_resolve_ground_combat(struct game_state *game, enum locations location,
+                               int damage)
 {
     /* TODO */
     return 0;
