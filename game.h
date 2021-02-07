@@ -68,13 +68,6 @@ struct game_state {
     unsigned int t_infantry[TRIP_INFANTRY_LOCS];
     unsigned int t_turn_frigates[END_YEAR - START_YEAR];
 
-#define TBOT_EVENT_MAX (6) /* 4 starting cards + 2 storms */
-    struct card **tbot_event_line;
-#define TBOT_BATTLE_CARD_COUNT (6)
-    struct card **tbot_battle_cards;
-    struct card **tbot_deck;
-    unsigned int tbot_deck_size;
-
     /* US Player */
 #define MAX_GUNBOATS 3
     unsigned int us_gunboats;

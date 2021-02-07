@@ -41,8 +41,6 @@ void init_game_state(struct game_state *game, unsigned int seed)
     game->battle_loc = NUM_LOCATIONS;
 
     init_game_cards(game);
-
-    /* TODO Setup the tbot */
 }
 
 void game_handle_intercept(struct game_state *game, enum locations location)
@@ -538,8 +536,6 @@ static void check_tripoli_win(struct game_state *game)
 void game_loop(struct game_state *game)
 {
     const char *err_msg = NULL;
-    /* TODO might have to allocate some memory for tbot actions */
-    const char *tbot_action = NULL;
 
     while (true) {
         if (game->season == SPRING) {
@@ -548,10 +544,6 @@ void game_loop(struct game_state *game)
 
     display:
         display_game(game);
-        if (tbot_action) {
-            cprintf(ITALIC BOLD RED, "%s\n", tbot_action);
-        }
-
         print_err_msg(err_msg);
 
         if (game->hand_size > MAX_HAND_SIZE) {
@@ -582,8 +574,7 @@ void game_loop(struct game_state *game)
             exit(0);
         }
 
-        /* Tripoli turn */
-
+        tbot_do_turn(game);
         check_tripoli_win(game);
 
         advance_game_round(game);
