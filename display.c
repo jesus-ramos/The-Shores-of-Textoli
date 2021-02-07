@@ -277,9 +277,10 @@ void display_game(struct game_state *game)
     print_year_track(game);
     print_season(game);
     printf("\n");
-    cprintf(BOLD RED, "[ Destroyed US Frigates : %u ] ",
-            game->destroyed_us_frigates);
-    cprintf(BOLD YELLOW, "[ Tripolitan Gold : %u ] ", game->pirated_gold);
+    cprintf(BOLD RED, "[ Destroyed US Frigates : %u/%u ] ",
+            game->destroyed_us_frigates, DESTROYED_FRIGATES_WIN);
+    cprintf(BOLD YELLOW, "[ Tripolitan Gold : %u/%u ] ", game->pirated_gold,
+            GOLD_WIN);
     cprintf(BOLD MAGENTA, "[ Game Seed : %u ]\n", game->seed);
 
     print_separator(size.ws_col);
