@@ -231,6 +231,8 @@ static const char *play_assault_on_tripoli(struct game_state *game)
         }
     }
 
+    game->us_frigates[TRIPOLI] = frig_count;
+
     /* Don't bother prompting, we're going in */
     game->assigned_gunboats = game->us_gunboats;
 
