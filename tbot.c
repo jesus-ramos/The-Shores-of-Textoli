@@ -3,7 +3,11 @@
 #include "cards.h"
 #include "game.h"
 
-/* Tbot core cards */
+/* 4 cards that can be added to the end of the event line */
+#define TBOT_EVENT_MAX (8)
+#define TBOT_EVENT_ADD_IDX (4)
+
+#define array_size(arr) (sizeof(arr) / sizeof(arr[0]))
 
 static void activate_ally(struct game_state *game, enum locations location)
 {
@@ -12,6 +16,81 @@ static void activate_ally(struct game_state *game, enum locations location)
 }
 
 static void pirate_raid(struct game_state *game, enum locations location);
+
+/* Battle cards */
+struct card books_overboard = {
+    .name = "US Signal Books Overboard",
+    .text = "Playable after any Interception Roll that "
+    "includes an American frigate. Randomly "
+    "draw one card from the American "
+    "player’s hand and place the card in the "
+    "discard pile."
+};
+
+struct card uncharted_waters = {
+    .name = "Uncharted Waters",
+    .text = "Playable if The Philadelphia Runs "
+    "Aground is the active event card this turn. "
+    "Roll two dice instead of one and choose "
+    "the preferred result."
+};
+
+struct card merchant_ship_converted = {
+    .name = "Merchant Ship Converted",
+    .text = "Playable if a Tripolitan Pirate Raid has "
+    "just been successful. Place one Tripolitan "
+    "corsair in the harbor of Tripoli."
+};
+
+struct card happy_hunting = {
+    .name = "Happy Hunting",
+    .text = "Playable when making a Pirate Raid "
+    "with Tripolitan corsairs. Roll three "
+    "additional dice."
+};
+
+struct card the_guns_of_tripoli = {
+    .name = "The Guns of Tripoli",
+    .text = "Playable during a naval battle in the "
+    "harbor of Tripoli. The Tripoli fleet may "
+    "roll an additional twelve dice. If played "
+    "during the Assault on Tripoli, only roll "
+    "the extra dice in the first round of the "
+    "naval battle."
+};
+
+struct card mercenaries_desert = {
+    .name = "Mercenaries Desert",
+    .text = "Playable at the start of a land battle. "
+    "Before the battle starts, roll one die for "
+    "each Arab infantry unit. For each 6, "
+    "take an Arab infantry unit and return it "
+    "to the Supply"
+};
+
+/* Yeah these are globals but I'm a bit lazy */
+static struct card *tbot_battle_cards[] = {
+    &books_overboard,
+    &uncharted_waters,
+    &merchant_ship_converted,
+    &happy_hunting,
+    &the_guns_of_tripoli,
+    &mercenaries_desert
+};
+
+static bool tbot_check_play_battle_card(struct card *card)
+{
+    int i;
+
+    for (i = 0; i < array_size(tbot_battle_cards); i++) {
+        if (tbot_battle_cards[i] == card) {
+            tbot_battle_cards[i] = NULL;
+            return true;
+        }
+    }
+
+    return false;
+}
 
 static bool yusuf_playable(struct game_state *game)
 {
@@ -41,6 +120,8 @@ static const char *play_yusuf(struct game_state *game)
 
     return NULL;
 }
+
+/* Tbot core cards */
 
 struct card yusuf_qaramanli = {
     .name = "Yusuf Qaramanli",
@@ -153,6 +234,87 @@ struct card troops_to_tripoli = {
     "of Tripoli."
 };
 
+static bool storms_playable(struct game_state *game)
+{
+    int i;
+
+    for (i = 0; i < PATROL_ZONES; i++) {
+        if (game->patrol_frigates[i] >= 2) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static int storm_score(struct game_state *game, enum locations location)
+{
+    assert(has_patrol_zone(location));
+
+    if (game->patrol_frigates[location] < 2) {
+        return -1;
+    }
+
+    return game->patrol_frigates[location];
+}
+
+static const char *play_storms(struct game_state *game)
+{
+    int i;
+    int scores[PATROL_ZONES];
+    int max_score = -1;
+    int score_idx = -1;
+    int score_count = 0;
+    int successes = 0;
+    int rolls;
+
+    for (i = 0; i < PATROL_ZONES; i++) {
+        scores[i] = storm_score(game, i);
+        if (scores[i] > max_score) {
+            max_score = scores[i];
+            score_count = 1;
+        } else if (scores[i] == max_score) {
+            score_count++;
+        }
+    }
+
+    assert(max_score != -1);
+
+    score_count = rand() % score_count + 1;
+
+    for (i = 0; i < PATROL_ZONES; i++) {
+        if (scores[i] == max_score) {
+            if (--score_count == 0) {
+                score_idx = i;
+                break;
+            }
+        }
+    }
+
+    assert(score_idx != -1);
+
+    rolls = game->patrol_frigates[score_idx];
+    while (rolls--) {
+        if (rolld6() == 6) {
+            successes++;
+        }
+    }
+
+    if (successes > 0) {
+        game->patrol_frigates[score_idx]--;
+        game->destroyed_us_frigates++;
+        successes--;
+    }
+
+    game->patrol_frigates[score_idx] -= successes;
+    if (game->year < END_YEAR) {
+        game->turn_track_frigates[year_to_frigate_idx(game->year + 1)] +=
+            successes;
+    }
+
+    return NULL;
+}
+
 struct card storms = {
     .name = "Storms",
     .text = "Select a naval patrol zone that contains "
@@ -161,8 +323,17 @@ struct card storms = {
     "6 rolled sinks a frigate. Each additional "
     "6 rolled damages a frigate and is placed "
     "on the following year of the Year Turn "
-    "Track."
+    "Track.",
+    .playable = storms_playable,
+    .play = play_storms
 };
+
+static bool tripoli_attacks_playable(struct game_state *game)
+{
+    int trip_dice = game->t_corsairs_tripoli + game->t_frigates * FRIGATE_DICE;
+
+    return trip_dice >= 5 && game->patrol_frigates[TRIPOLI] == 1;
+}
 
 struct card tripoli_attacks = {
     .name = "Tripoli Attacks",
@@ -172,7 +343,8 @@ struct card tripoli_attacks = {
     "battle against the American frigates in "
     "the patrol zone. Any Swedish frigates "
     "in the patrol zone do not participate in "
-    "the battle."
+    "the battle.",
+    .playable = tripoli_attacks_playable
 };
 
 static bool sweden_pays_tribute_playable(struct game_state *game)
@@ -199,11 +371,54 @@ struct card sweden_pays_tribute = {
     .play = play_sweden_pays_tribute
 };
 
+static bool acquire_corsairs_playable(struct game_state *game)
+{
+    int corsairs = game->t_corsairs_gibraltar + game->t_corsairs_tripoli;
+
+    return corsairs <= MAX_TRIPOLI_CORSAIRS - 2;
+}
+
+static const char *play_tripoli_acquires_corsairs(struct game_state *game)
+{
+    game->t_corsairs_tripoli += 2;
+    return NULL;
+}
+
 struct card tripoli_acquires_corsairs = {
     .name = "Tripoli Acquires Corsairs",
     .text = "Place two Tripolitan corsairs in the "
-    "harbor of Tripoli."
+    "harbor of Tripoli.",
+    .playable = acquire_corsairs_playable,
+    .play = play_tripoli_acquires_corsairs
 };
+
+static bool philly_runs_aground_playable(struct game_state *game)
+{
+    return game->patrol_frigates[TRIPOLI] > 0;
+}
+
+static const char *play_philly_runs_aground(struct game_state *game)
+{
+    int roll = rolld6();
+    bool uncharted_waters_played =
+        tbot_check_play_battle_card(&uncharted_waters);
+
+    if (uncharted_waters_played) {
+        roll = max(roll, rolld6());
+    }
+
+    switch (roll) {
+        case 5:
+        case 6:
+            game->t_frigates++;
+        case 3:
+        case 4:
+            game->patrol_frigates[TRIPOLI]--;
+            game->destroyed_us_frigates++;
+    }
+
+    return NULL;
+}
 
 struct card philly_runs_aground = {
     .name = "The Philadelphia Runs Aground",
@@ -215,25 +430,51 @@ struct card philly_runs_aground = {
     "3-4: Frigate sunk. "
     "5-6: Frigate captured. Take the American "
     "frigate as “sunk” and place one Tripolitan "
-    "frigate in the harbor of Tripoli."
+    "frigate in the harbor of Tripoli.",
+    .playable = philly_runs_aground_playable,
+    .play = play_philly_runs_aground
 };
+
+static const char *play_algiers_declares_war(struct game_state *game)
+{
+    activate_ally(game, ALGIERS);
+    return NULL;
+}
 
 struct card algiers_declares_war = {
     .name = "Algiers Declares War",
     .text = "Place three Algerine corsairs in the "
-    "harbor of Algiers."
+    "harbor of Algiers.",
+    .playable = always_playable,
+    .play = play_algiers_declares_war
 };
+
+static const char *play_morocco_declares_war(struct game_state *game)
+{
+    activate_ally(game, TANGIER);
+    return NULL;
+}
 
 struct card morocco_declares_war = {
     .name = "Morocco Declares War",
     .text = "Place three Moroccan corsairs in the "
-    "harbor of Tangier."
+    "harbor of Tangier.",
+    .playable = always_playable,
+    .play = play_morocco_declares_war
 };
+
+static const char *play_tunis_declares_war(struct game_state *game)
+{
+    activate_ally(game, TUNIS);
+    return NULL;
+}
 
 struct card tunis_declares_war = {
     .name = "Tunis Declares War",
     .text = "Place three Tunisian corsairs in the "
-    "harbor of Tunis."
+    "harbor of Tunis.",
+    .playable = always_playable,
+    .play = play_tunis_declares_war
 };
 
 struct card second_storms = {
@@ -244,75 +485,10 @@ struct card second_storms = {
     "6 rolled sinks a frigate. Each additional "
     "6 rolled damages a frigate and is placed "
     "on the following year of the Year Turn "
-    "Track."
+    "Track.",
+    .playable = storms_playable, /* It's the same card as Storms */
+    .play = play_storms
 };
-
-/* Battle cards */
-struct card books_overboard = {
-    .name = "US Signal Books Overboard",
-    .text = "Playable after any Interception Roll that "
-    "includes an American frigate. Randomly "
-    "draw one card from the American "
-    "player’s hand and place the card in the "
-    "discard pile."
-};
-
-struct card uncharted_waters = {
-    .name = "Uncharted Waters",
-    .text = "Playable if The Philadelphia Runs "
-    "Aground is the active event card this turn. "
-    "Roll two dice instead of one and choose "
-    "the preferred result."
-};
-
-struct card merchant_ship_converted = {
-    .name = "Merchant Ship Converted",
-    .text = "Playable if a Tripolitan Pirate Raid has "
-    "just been successful. Place one Tripolitan "
-    "corsair in the harbor of Tripoli."
-};
-
-struct card happy_hunting = {
-    .name = "Happy Hunting",
-    .text = "Playable when making a Pirate Raid "
-    "with Tripolitan corsairs. Roll three "
-    "additional dice."
-};
-
-struct card the_guns_of_tripoli = {
-    .name = "The Guns of Tripoli",
-    .text = "Playable during a naval battle in the "
-    "harbor of Tripoli. The Tripoli fleet may "
-    "roll an additional twelve dice. If played "
-    "during the Assault on Tripoli, only roll "
-    "the extra dice in the first round of the "
-    "naval battle."
-};
-
-struct card mercenaries_desert = {
-    .name = "Mercenaries Desert",
-    .text = "Playable at the start of a land battle. "
-    "Before the battle starts, roll one die for "
-    "each Arab infantry unit. For each 6, "
-    "take an Arab infantry unit and return it "
-    "to the Supply"
-};
-
-#define array_size(arr) (sizeof(arr) / sizeof(arr[0]))
-
-/* Yeah these are globals but I'm a bit lazy */
-static struct card *tbot_battle_cards[] = {
-    &books_overboard,
-    &uncharted_waters,
-    &merchant_ship_converted,
-    &happy_hunting,
-    &the_guns_of_tripoli,
-    &mercenaries_desert
-};
-
-#define TBOT_EVENT_MAX (6)
-#define STORMS_INDEX (4)
-#define SECOND_STORMS_INDEX (5)
 
 /* We leave the last 2 slots open for Storms and Second Storms */
 static struct card *tbot_event_line[TBOT_EVENT_MAX] = {
@@ -350,23 +526,29 @@ int tbot_resolve_ground_combat(struct game_state *game, enum locations location,
     return 0;
 }
 
-static bool tbot_check_play_battle_card(struct card *card)
-{
-    int i;
-
-    for (i = 0; i < array_size(tbot_battle_cards); i++) {
-        if (tbot_battle_cards[i] == card) {
-            tbot_battle_cards[i] = NULL;
-            return true;
-        }
-    }
-
-    return false;
-}
-
 static inline bool five_corsair_check(struct game_state *game)
 {
     return game->t_corsairs_tripoli >= 5;
+}
+
+static bool check_add_card_to_event_line(struct game_state *game,
+                                         struct card *card)
+{
+    int i;
+
+    if (!card->playable(game) &&
+        (card == &storms || card == &second_storms ||
+         card == &philly_runs_aground || card == &tripoli_acquires_corsairs)) {
+        for (i = TBOT_EVENT_ADD_IDX; i < TBOT_EVENT_MAX; i++) {
+            if (tbot_event_line[i] == NULL) {
+                tbot_event_line[i] = card;
+                return true;
+            }
+        }
+    }
+
+
+    return false;
 }
 
 static bool tbot_draw_play_card(struct game_state *game)
@@ -374,6 +556,7 @@ static bool tbot_draw_play_card(struct game_state *game)
     int card_idx;
     struct card *card;
 
+draw_new_card:
     if (tbot_deck_size == 0) {
         return false;
     }
@@ -386,6 +569,10 @@ static bool tbot_draw_play_card(struct game_state *game)
     tbot_deck[--tbot_deck_size] = NULL;
 
     assert(card && card->playable && card->play);
+
+    if (check_add_card_to_event_line(game, card)) {
+        goto draw_new_card;
+    }
 
     if (card->playable(game)) {
         assert(card->play);

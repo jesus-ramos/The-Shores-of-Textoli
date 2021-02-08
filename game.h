@@ -62,11 +62,13 @@ struct game_state {
 #define GOLD_WIN (12)
     unsigned int pirated_gold;
     unsigned int t_frigates;
+#define MAX_TRIPOLI_CORSAIRS (9)
     unsigned int t_corsairs_tripoli;
     unsigned int t_corsairs_gibraltar;
     unsigned int t_allies[TRIP_ALLIES]; /* Corsair count at each location */
     unsigned int t_infantry[TRIP_INFANTRY_LOCS];
     unsigned int t_turn_frigates[END_YEAR - START_YEAR];
+    bool tripoli_attacks;
 
     /* US Player */
 #define MAX_GUNBOATS 3
