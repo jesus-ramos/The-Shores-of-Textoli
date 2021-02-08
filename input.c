@@ -73,7 +73,7 @@ static const char *help_command()
         "[discard/d] [card number] [move/m,gunboat/g] : "
         "discard a card to move 2 frigates or build a gunboat. ex: d 2 g, "
         "discard 3 move\n"
-        "[help/h] : print this useful message\n"
+        "[help/h/?] : print this useful message\n"
         "[quit/q] : quit the game";
 }
 
@@ -91,7 +91,8 @@ static const char *parse_command(struct game_state *game, char *line)
         return play_command(game, true);
     } else if (strcmp(command, "discard") == 0 || strcmp(command, "d") == 0) {
         return discard_command(game);
-    } else if (strcmp(command, "help") == 0 || strcmp(command, "h") == 0) {
+    } else if (strcmp(command, "help") == 0 || strcmp(command, "h") == 0 ||
+               strcmp(command, "?") == 0) {
         return help_command();
     } else if (strcmp(command, "quit") == 0 || strcmp(command, "q") == 0) {
         if (yn_prompt("Quit?")) {
