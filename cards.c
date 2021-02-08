@@ -414,6 +414,7 @@ static const char *play_show_of_force(struct game_state *game)
 
         moves[num_moves].to = ally_loc;
         moves[num_moves].to_type = HARBOR;
+        num_moves++;
     }
 
     for (i = 0; i < num_moves; i++) {
