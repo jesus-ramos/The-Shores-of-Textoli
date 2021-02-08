@@ -178,8 +178,8 @@ enum battle_type location_battle(struct game_state *game,
     return BTYPE_NONE;
 }
 
-static void move_frigates(struct game_state *game, struct frigate_move *moves,
-                          int num_moves)
+void move_frigates(struct game_state *game, struct frigate_move *moves,
+                   int num_moves)
 {
     int i;
     struct frigate_move *move;
@@ -200,9 +200,9 @@ static void move_frigates(struct game_state *game, struct frigate_move *moves,
     }
 }
 
-static const char *validate_moves(struct game_state *game,
-                                  struct frigate_move *moves,
-                                  int num_moves, int allowed_moves)
+const char *validate_moves(struct game_state *game,
+                           struct frigate_move *moves,
+                           int num_moves, int allowed_moves)
 {
     int i;
     struct frigate_move *move;

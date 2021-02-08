@@ -344,6 +344,99 @@ static bool trip_allies_active(struct game_state *game)
     return false;
 }
 
+static const char *play_show_of_force(struct game_state *game)
+{
+    char *line;
+    char *ally_str;
+    enum locations ally_loc;
+    struct frigate_move moves[3];
+    int num_moves = 0;
+    char *from_str;
+    char *from_type_str;
+    char *quantity_str;
+    int i;
+    int frigates_moved = 0;
+    const char *err;
+
+    cprintf(BOLD WHITE, "Choose which Tripoli ally to return to supply and what frigates to move: "
+            "[algiers/tangier/tunis] [location] [patrol/harbor] [quantity]...\n");
+    prompt();
+    line = input_getline();
+
+    ally_str = strtok(line, sep);
+    if (ally_str == NULL) {
+        free(line);
+        return "No Tripolitan ally selected";
+    }
+
+    ally_loc = parse_location(ally_str);
+    if (!has_trip_allies(ally_loc)) {
+        free(line);
+        return "Invalid ally location selected";
+    }
+
+    if (game->t_allies[ally_loc] == 0) {
+        free(line);
+        return "Selected ally is not active";
+    }
+
+    while (true) {
+        from_str = strtok(NULL, sep);
+        if (from_str == NULL) {
+            break;
+        }
+        from_type_str = strtok(NULL, sep);
+        if (from_type_str == NULL) {
+            free(line);
+            return "Missing location zone, patrol or harbor";
+        }
+        quantity_str = strtok(NULL, sep);
+        if (quantity_str == NULL) {
+            free(line);
+            return "No quantity of frigates to move provided";
+        }
+
+        moves[num_moves].from = parse_location(from_str);
+        moves[num_moves].from_type = parse_move_type(from_type_str);
+        moves[num_moves].quantity = strtol(quantity_str, NULL, 10);
+        if (moves[num_moves].from == NUM_LOCATIONS) {
+            free(line);
+            return "Invalid location for move provided";
+        }
+        if (moves[num_moves].from_type == INVALID_MOVE_TYPE) {
+            free(line);
+            return "Invalid location zone provided";
+        }
+        if (errno != 0) {
+            free(line);
+            return "Invalid move quantity provided";
+        }
+
+        moves[num_moves].to = ally_loc;
+        moves[num_moves].to_type = HARBOR;
+    }
+
+    for (i = 0; i < num_moves; i++) {
+        frigates_moved += moves[i].quantity;
+    }
+
+    if (frigates_moved != 3) {
+        free(line);
+        return "You must move exactly 3 frigates";
+    }
+
+    err = validate_moves(game, moves, num_moves, 3);
+    if (err != NULL) {
+        free(line);
+        return err;
+    }
+
+    move_frigates(game, moves, num_moves);
+
+    free(line);
+    return NULL;
+}
+
 struct card a_show_of_force = {
     .name = "A Show of Force",
     .text = "Move three American frigates to the "
@@ -352,7 +445,8 @@ struct card a_show_of_force = {
     "all of the corsairs from the harbor to "
     "the Supply",
     .remove_after_use = false,
-    .playable = trip_allies_active
+    .playable = trip_allies_active,
+    .play = play_show_of_force
 };
 
 static const char *play_tribute_paid(struct game_state *game)

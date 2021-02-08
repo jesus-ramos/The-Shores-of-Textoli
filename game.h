@@ -332,5 +332,9 @@ const char *assign_damage(struct game_state *game, enum locations location,
                           int destroy_marines, int destroy_arabs);
 enum battle_type location_battle(struct game_state *game,
                                  enum locations location);
+const char *validate_moves(struct game_state *game, struct frigate_move *moves,
+                           int num_moves, int allowed_moves);
+void move_frigates(struct game_state *game, struct frigate_move *moves,
+                   int num_moves);
 
 #endif /* GAME_H */
