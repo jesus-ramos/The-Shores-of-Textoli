@@ -187,51 +187,126 @@ struct card constantinople_sends_aid = {
 };
 
 /* Tbot deck */
+
+static bool supplies_run_low_playable(struct game_state *game)
+{
+    return game->patrol_frigates[TRIPOLI] == 2;
+}
+
+static const char *play_supplies_run_low(struct game_state *game)
+{
+    /* XXX: Should the bot choose a zone with the most frigates or just tripoli,
+     * likely that most frigates will be in tripoli patrol zone but... you never
+     * know
+     */
+
+    game->patrol_frigates[TRIPOLI]--;
+    game->us_frigates[MALTA]++;
+
+    return NULL;
+}
+
 struct card us_supplies_run_low = {
     .name = "US Supplies Run Low",
     .text = "Move one American frigate from any "
-    "naval patrol zone to the harbor of Malta."
+    "naval patrol zone to the harbor of Malta.",
+    .playable = supplies_run_low_playable,
+    .play = play_supplies_run_low
 };
+
+/* With the corsairs raid cards, the bot will never play them directly and will
+ * always discard to raid or build instead
+ */
+static bool corsairs_raid_playable(struct game_state *game)
+{
+    return false;
+}
+
+static const char *play_corsairs_raid(struct game_state *game)
+{
+    assert(false);
+    return NULL;
+}
 
 /* 2 copies */
 struct card algerine_corsairs_raid = {
     .name = "Algerine Corsairs Raid",
     .text = "Pirate Raid with all corsairs from the "
-    "harbor of Algiers."
+    "harbor of Algiers.",
+    .playable = corsairs_raid_playable,
+    .play = play_corsairs_raid
 };
 
 /* 2 copies */
 struct card moroccan_corsairs_raid = {
     .name = "Moroccan Corsairs Raid",
     .text = "Pirate Raid with all corsairs from the "
-    "harbor of Tangier."
+    "harbor of Tangier.",
+    .playable = corsairs_raid_playable,
+    .play = play_corsairs_raid
 };
 
 /* 2 copies */
 struct card tunisian_corsairs_raid = {
     .name = "Tunisian Corsairs Raid",
     .text = "Pirate Raid with all corsairs from the "
-    "harbor of Tunis."
+    "harbor of Tunis.",
+    .playable = corsairs_raid_playable,
+    .play = play_corsairs_raid
 };
+
+static bool troops_to_derne_playable(struct game_state *game)
+{
+    return game->t_infantry[trip_infantry_idx(DERNE)] > 0;
+}
+
+static const char *play_troops_to_derne(struct game_state *game)
+{
+    game->t_infantry[trip_infantry_idx(DERNE)] += 2;
+    return NULL;
+}
 
 struct card troops_to_derne = {
     .name = "Troops to Derne",
     .text = "Playable if Hamet’s Army has not "
     "captured Derne. Place two Tripolitan "
-    "infantry in the city of Derne."
+    "infantry in the city of Derne.",
+    .playable = troops_to_derne_playable,
+    .play = play_troops_to_derne
 };
+
+static bool troops_to_benghazi_playable(struct game_state *game)
+{
+    return game->t_infantry[trip_infantry_idx(BENGHAZI)] > 0;
+}
+
+static const char *play_troops_to_benghazi(struct game_state *game)
+{
+    game->t_infantry[trip_infantry_idx(BENGHAZI)] += 2;
+    return NULL;
+}
 
 struct card troops_to_benghazi = {
     .name = "Troops to Benghazi",
     .text = "Playable if Hamet’s Army has not "
     "captured Benghazi. Place two Tripolitan "
-    "infantry in the city of Benghazi."
+    "infantry in the city of Benghazi.",
+    .playable = troops_to_benghazi_playable,
+    .play = play_troops_to_benghazi
 };
+
+static const char *play_troops_to_tripoli(struct game_state *game)
+{
+    game->t_infantry[trip_infantry_idx(TRIPOLI)] += 2;
+    return NULL;
+}
 
 struct card troops_to_tripoli = {
     .name = "Troops to Tripoli",
     .text = "Place two Tripolitan infantry in the city "
-    "of Tripoli."
+    "of Tripoli.",
+    .playable = always_playable,
+    .play = play_troops_to_tripoli
 };
 
 static bool storms_playable(struct game_state *game)
