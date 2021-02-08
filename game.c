@@ -348,12 +348,18 @@ static void return_to_malta(struct game_state *game,
 static const char *resolve_naval_battle(struct game_state *game,
                                         enum locations location)
 {
-    bool prebles_boys_played = check_play_battle_card(game, &prebles_boys);
+    bool prebles_boys_played;
     int dice;
     int successes = 0;
     int damage;
     const char *err;
 
+    err = parse_assign_gunboats(game, location, HARBOR);
+    if (err != NULL) {
+        return err;
+    }
+
+    prebles_boys_played = check_play_battle_card(game, &prebles_boys);
     if (prebles_boys_played) {
         dice = game->us_frigates[location] * 3;
     } else {
