@@ -67,7 +67,14 @@ static const char *discard_command(struct game_state *game)
 
 static const char *help_command()
 {
-    return "Help text TBD";
+    return "Commands:\n"
+        "[play/p] [card number] : play a card from hand. ex: p 0, play 2\n"
+        "[core/c] [card number] : play a core card. ex: c 1, core 0\n"
+        "[discard/d] [card number] [move/m,gunboat/g] : "
+        "discard a card to move 2 frigates or build a gunboat. ex: d 2 g, "
+        "discard 3 move\n"
+        "[help/h] : print this useful message\n"
+        "[quit/q] : quit the game";
 }
 
 static const char *parse_command(struct game_state *game, char *line)
