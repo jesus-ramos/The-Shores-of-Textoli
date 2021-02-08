@@ -103,6 +103,8 @@ static void apply_damage(struct game_state *game, enum locations location,
             game->t_turn_frigates[year_to_frigate_idx(game->year + 1)] +=
                 game->t_damaged_frigates;
         }
+    } else {
+        assert(false);
     }
 }
 
