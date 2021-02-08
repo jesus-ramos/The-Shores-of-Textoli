@@ -594,10 +594,12 @@ static const char *play_recruit_bedouins(struct game_state *game)
 
     for (i = US_INFANTRY_START; i <= US_INFANTRY_END; i++) {
         if (hamets_army_at(game, i)) {
-            game->arab_infantry[i] += 2;
-            break;
+            game->arab_infantry[us_infantry_idx(i)] += 2;
+            return NULL;
         }
     }
+
+    assert(false);
 
     return NULL;
 }
