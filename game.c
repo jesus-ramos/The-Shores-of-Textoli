@@ -46,7 +46,7 @@ void init_game_state(struct game_state *game, unsigned int seed)
 bool game_handle_intercept(struct game_state *game, enum locations location)
 {
     int frig_count;
-    bool lieutenant_played;
+    bool lieutenant_played = false;
     int rolls = 0;
     int successes = 0;
     unsigned int *corsairs;
@@ -69,7 +69,10 @@ bool game_handle_intercept(struct game_state *game, enum locations location)
         return false;;
     }
 
-    lieutenant_played = check_play_battle_card(game, &lieutenant_in_pursuit);
+    if (game->patrol_frigates[location]) {
+        lieutenant_played = check_play_battle_card(game, &lieutenant_in_pursuit);
+    }
+
     if (lieutenant_played) {
         rolls += 3 * game->patrol_frigates[location];
     } else {
