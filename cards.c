@@ -434,6 +434,8 @@ static const char *play_show_of_force(struct game_state *game)
 
     move_frigates(game, moves, num_moves);
 
+    game->t_allies[ally_loc] = 0;
+
     free(line);
     return NULL;
 }
