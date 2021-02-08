@@ -729,7 +729,9 @@ int tbot_resolve_naval_battle(struct game_state *game, enum locations location,
     if (has_trip_allies(location)) {
         dice = game->t_allies[location];
     } else {
-        dice = game->t_frigates * FRIGATE_DICE + game->t_corsairs_tripoli;
+        dice = game->t_frigates * FRIGATE_DICE +
+            game->t_damaged_frigates * FRIGATE_DICE +
+            game->t_corsairs_tripoli;
         if ((game->year == 1805 && game->season != WINTER) ||
             game->year == 1806 || game->victory_or_death) {
             if (tbot_check_play_battle_card(&the_guns_of_tripoli)) {
