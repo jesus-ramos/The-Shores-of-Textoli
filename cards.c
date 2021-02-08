@@ -579,7 +579,7 @@ static bool check_hamets_army_created(struct game_state *game)
 {
     int i;
 
-    for (i = US_INFANTRY_START; i < US_INFANTRY_END; i++) {
+    for (i = US_INFANTRY_START; i <= US_INFANTRY_END; i++) {
         if (hamets_army_at(game, i)) {
             return true;
         }
@@ -592,7 +592,7 @@ static const char *play_recruit_bedouins(struct game_state *game)
 {
     int i;
 
-    for (i = US_INFANTRY_START; i < US_INFANTRY_END; i++) {
+    for (i = US_INFANTRY_START; i <= US_INFANTRY_END; i++) {
         if (hamets_army_at(game, i)) {
             game->arab_infantry[i] += 2;
             break;
