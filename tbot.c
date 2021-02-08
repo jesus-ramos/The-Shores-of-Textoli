@@ -17,6 +17,95 @@ static void activate_ally(struct game_state *game, enum locations location)
 
 static void pirate_raid(struct game_state *game, enum locations location);
 
+static void apply_damage(struct game_state *game, enum locations location,
+                         enum battle_type btype, int hits)
+{
+    int idx;
+    int apply_hits;
+
+    /* Bombardment is handled directly since there's no real logic to it */
+    assert(btype != NAVAL_BOMBARDMENT);
+
+    if (hits == 0) {
+        return;
+    }
+
+    if (has_trip_allies(location)) {
+        assert(btype == NAVAL_BATTLE);
+        hits = min(hits, game->t_allies[location]);
+        game->t_allies[location] -= hits;
+        return;
+    }
+
+    if (btype == GROUND_BATTLE) {
+        idx = trip_infantry_idx(location);
+        hits = min(hits, game->t_infantry[idx]);
+        game->t_infantry[idx] -= hits;
+        return;
+    }
+
+    assert(location == TRIPOLI && btype == NAVAL_BATTLE);
+    if ((game->year >= 1801 && game->year <= 1804) ||
+        (game->year == 1805 && game->season == WINTER) ||
+        game->victory_or_death) {
+        /* First damage frigates before destroying corsairs */
+        apply_hits = min(hits, game->t_frigates);
+        hits -= apply_hits;
+        game->t_frigates -= apply_hits;
+        game->t_damaged_frigates += apply_hits;
+        assert(hits >= 0 && game->t_frigates >= 0);
+
+        /* Next destroy corsairs */
+        apply_hits = min(hits, game->t_corsairs_tripoli);
+        game->t_corsairs_tripoli -= apply_hits;
+        hits -= apply_hits;
+        assert(hits >= 0 && game->t_corsairs_tripoli >= 0);
+
+        /* Final resort, destroy damaged frigates */
+        apply_hits = min(hits, game->t_damaged_frigates);
+        game->t_damaged_frigates -= apply_hits;
+        assert(game->t_damaged_frigates >= 0);
+
+        /* If we're not in the final battle the frigates will stick around until
+         * they're destroyed
+         */
+        if (!game->victory_or_death) {
+            if (game->year < END_YEAR) {
+                game->t_turn_frigates[year_to_frigate_idx(game->year + 1)] +=
+                    game->t_damaged_frigates;
+            }
+            game->t_damaged_frigates = 0;
+        }
+    } else if (game->year == 1805 || game->year == 1806) {
+        /* Destroy corsairs first */
+        apply_hits = min(hits, game->t_corsairs_tripoli);
+        hits -= apply_hits;
+        game->t_corsairs_tripoli -= apply_hits;
+
+        assert(hits >= 0 && game->t_corsairs_tripoli >= 0);
+
+        /* Damage frigates */
+        apply_hits = min(hits, game->t_frigates);
+        hits -= apply_hits;
+        game->t_frigates -= apply_hits;
+        game->t_damaged_frigates += apply_hits;
+
+        assert(hits >= 0 && game->t_frigates >= 0);
+
+        /* Destroy frigates when theres no other option */
+        apply_hits -= min(hits, game->t_damaged_frigates);
+        game->t_damaged_frigates -= apply_hits;
+
+        assert(game->t_damaged_frigates >= 0);
+
+        /* Any frigates not destroyed ship em off to get repaired */
+        if (game->year < END_YEAR) {
+            game->t_turn_frigates[year_to_frigate_idx(game->year + 1)] +=
+                game->t_damaged_frigates;
+        }
+    }
+}
+
 /* Battle cards */
 struct card books_overboard = {
     .name = "US Signal Books Overboard",
@@ -410,6 +499,45 @@ static bool tripoli_attacks_playable(struct game_state *game)
     return trip_dice >= 5 && game->patrol_frigates[TRIPOLI] == 1;
 }
 
+/* This one is a weird fight since it's at the tripoli patrol zone so we just
+ * handle it separately
+ */
+static const char *play_tripoli_attacks(struct game_state *game)
+{
+    bool prebles_boys_played = check_play_battle_card(game, &prebles_boys);
+    int us_dice = (prebles_boys_played) ? 3 : FRIGATE_DICE; /* only 1 ship in
+                                                              * the zone */
+    int trip_dice = game->t_corsairs_tripoli + game->t_frigates * FRIGATE_DICE;
+    int us_success = 0;
+    int trip_success = 0;
+
+    while (us_dice--) {
+        if (rolld6() == 6) {
+            us_success++;
+        }
+    }
+    while (trip_dice--) {
+        if (rolld6() == 6) {
+            trip_success++;
+        }
+    }
+
+    if (trip_success >= 1) {
+        game->patrol_frigates[TRIPOLI]--;
+        if (trip_success == 1) {
+            if (game->year < END_YEAR) {
+                game->turn_track_frigates[year_to_frigate_idx(game->year + 1)]++;
+            }
+        } else if (trip_success >= 2) {
+            game->destroyed_us_frigates++;
+        }
+    }
+
+    apply_damage(game, TRIPOLI, NAVAL_BATTLE, us_success);
+
+    return NULL;
+}
+
 struct card tripoli_attacks = {
     .name = "Tripoli Attacks",
     .text = "Move all Tripolitan frigates and corsairs "
@@ -419,7 +547,8 @@ struct card tripoli_attacks = {
     "the patrol zone. Any Swedish frigates "
     "in the patrol zone do not participate in "
     "the battle.",
-    .playable = tripoli_attacks_playable
+    .playable = tripoli_attacks_playable,
+    .play = play_tripoli_attacks
 };
 
 static bool sweden_pays_tribute_playable(struct game_state *game)
@@ -590,15 +719,47 @@ static unsigned int tbot_deck_size = array_size(tbot_deck);
 int tbot_resolve_naval_battle(struct game_state *game, enum locations location,
                               int damage)
 {
-    /* TODO */
-    return 0;
+    int hits = 0;
+    int dice;
+
+    assert(has_trip_allies(location) || location == TRIPOLI);
+
+    if (has_trip_allies(location)) {
+        dice = game->t_allies[location];
+    } else {
+        dice = game->t_frigates * FRIGATE_DICE + game->t_corsairs_tripoli;
+        if ((game->year == 1805 && game->season != WINTER) ||
+            game->year == 1806 || game->victory_or_death) {
+            if (tbot_check_play_battle_card(&the_guns_of_tripoli)) {
+                dice += 12;
+            }
+        }
+    }
+
+    while (dice--) {
+        if (rolld6() == 6) {
+            hits++;
+        }
+    }
+
+    apply_damage(game, location, NAVAL_BATTLE, damage);
+    return hits;
 }
 
 int tbot_resolve_ground_combat(struct game_state *game, enum locations location,
                                int damage)
 {
-    /* TODO */
-    return 0;
+    int hits = 0;
+    int dice = game->t_infantry[trip_infantry_idx(location)];
+
+    while (dice--) {
+        if (rolld6() == 6) {
+            hits++;
+        }
+    }
+
+    apply_damage(game, location, GROUND_BATTLE, damage);
+    return hits;
 }
 
 static inline bool five_corsair_check(struct game_state *game)
@@ -681,8 +842,11 @@ static void pirate_raid(struct game_state *game, enum locations location)
     int i;
     int successes = 0;
     int raid_count;
+    bool intercepted = game_handle_intercept(game, location);
 
-    game_handle_intercept(game, location);
+    if (intercepted && tbot_check_play_battle_card(&books_overboard)) {
+        discard_from_hand(game, rand() % game->hand_size);
+    }
 
     raid_count = (location == TRIPOLI) ? game->t_corsairs_tripoli :
         game->t_allies[location];
@@ -792,4 +956,24 @@ void tbot_do_turn(struct game_state *game)
     }
 
     raid_or_build(game);
+}
+
+void tbot_plays_mercenaries_desert(struct game_state *game)
+{
+    int dice;
+    int idx = us_infantry_idx(DERNE);
+    int remove = 0;
+
+    if (!tbot_check_play_battle_card(&mercenaries_desert)) {
+        return;
+    }
+
+    dice = game->arab_infantry[idx];
+    while (dice--) {
+        if (rolld6() == 6) {
+            remove++;
+        }
+    }
+
+    game->arab_infantry[idx] -= remove;
 }

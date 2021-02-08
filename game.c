@@ -43,25 +43,30 @@ void init_game_state(struct game_state *game, unsigned int seed)
     init_game_cards(game);
 }
 
-void game_handle_intercept(struct game_state *game, enum locations location)
+bool game_handle_intercept(struct game_state *game, enum locations location)
 {
-    int frig_count = 0;
+    int frig_count;
     bool lieutenant_played;
     int rolls = 0;
     int successes = 0;
     unsigned int *corsairs;
+    /* Used for signal books overboard check by tbot */
+    bool intercepted = false;
 
     assert(has_patrol_zone(location));
+
+    frig_count = game->patrol_frigates[location];
+    if (frig_count) {
+        intercepted = true;
+    }
 
     if (location == TRIPOLI && game->swedish_frigates_active) {
         frig_count += 2;
         rolls += 2 * FRIGATE_DICE;
     }
 
-    frig_count += game->patrol_frigates[location];
-
     if (frig_count == 0) {
-        return;
+        return false;;
     }
 
     lieutenant_played = check_play_battle_card(game, &lieutenant_in_pursuit);
@@ -90,6 +95,8 @@ void game_handle_intercept(struct game_state *game, enum locations location)
     } else {
         *corsairs -= successes;
     }
+
+    return intercepted;
 }
 
 static void advance_game_round(struct game_state *game)
@@ -423,12 +430,23 @@ static const char *resolve_ground_combat(struct game_state *game,
     int damage;
     const char *err;
     enum battle_type btype;
-    bool lieutenant_played =
-        check_play_battle_card(game, &lieutenant_leads_the_charge);
-    bool sharpshooters_played =
-        check_play_battle_card(game, &marine_sharpshooters);
+    bool lieutenant_played;
+    bool sharpshooters_played;
 
     assert(has_us_infantry(location));
+
+    /* The bot will play mercenaries desert before we pick our cards but the
+     * player won't see the effects until the next display so the end visibility
+     * is the same. The bot also only plays this when general eaton attacks
+     * derne so we really only have to check that the location is derne
+     */
+    if (location == DERNE) {
+        tbot_plays_mercenaries_desert(game);
+    }
+
+    lieutenant_played =
+        check_play_battle_card(game, &lieutenant_leads_the_charge);
+    sharpshooters_played = check_play_battle_card(game, &marine_sharpshooters);
 
     while (true) {
         idx = us_infantry_idx(location);

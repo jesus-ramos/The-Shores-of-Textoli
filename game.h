@@ -62,6 +62,7 @@ struct game_state {
 #define GOLD_WIN (12)
     unsigned int pirated_gold;
     unsigned int t_frigates;
+    unsigned int t_damaged_frigates;
 #define MAX_TRIPOLI_CORSAIRS (9)
     unsigned int t_corsairs_tripoli;
     unsigned int t_corsairs_gibraltar;
@@ -315,11 +316,16 @@ static inline unsigned int max(unsigned int a, unsigned int b)
     return (a > b) ? a : b;
 }
 
+static inline unsigned int min(unsigned int a, unsigned int b)
+{
+    return (a < b) ? a : b;
+}
+
 void init_game_state(struct game_state *game, unsigned int seed);
 void game_loop(struct game_state *game);
 bool build_gunboat(struct game_state *game);
 const char *game_move_ships(struct game_state *game, int allowed_moves);
-void game_handle_intercept(struct game_state *game, enum locations location);
+bool game_handle_intercept(struct game_state *game, enum locations location);
 const char *assign_damage(struct game_state *game, enum locations location,
                           enum move_type type, int destroy_frigates,
                           int damage_frigates, int destroy_gunboats,
