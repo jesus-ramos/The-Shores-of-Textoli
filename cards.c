@@ -681,6 +681,9 @@ static const char *play_brainbridge_supplies_intel(struct game_state *game)
          * pile */
     } else if (strcmp(action, "take") == 0 || strcmp(action, "t") == 0) {
         game->us_hand[game->hand_size++] = card;
+    } else {
+        free(line);
+        return "Invalid action, must take or play a card";
     }
 
     free(line);
