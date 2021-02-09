@@ -198,7 +198,7 @@ static bool peace_treaty_playable(struct game_state *game)
 
 static const char *play_treaty(struct game_state *game)
 {
-    cprintf(BOLD ITALIC BLUE, "US Victory via Peace Treaty!\n");
+    cprintf(ITALIC BLUE, "US Victory via Peace Treaty!\n");
     exit(0);
 
     return NULL;
