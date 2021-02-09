@@ -22,6 +22,18 @@ void remove_card_from_game(struct game_state *game, int idx)
     game->us_hand[--game->hand_size] = NULL;
 }
 
+static void move_hamets_army(struct game_state *game, enum locations from,
+                             enum locations to)
+{
+    int from_idx = us_infantry_idx(from);
+    int to_idx = us_infantry_idx(to);
+
+    game->marine_infantry[to_idx] += game->marine_infantry[from_idx];
+    game->marine_infantry[from_idx] = 0;
+    game->arab_infantry[to_idx] += game->arab_infantry[from_idx];
+    game->arab_infantry[from_idx] = 0;
+}
+
 static int card_in_hand(struct game_state *game, struct card *card)
 {
     int i;
@@ -243,13 +255,7 @@ static const char *play_assault_on_tripoli(struct game_state *game)
         game->marine_infantry[dest] += 3;
     }
 
-    i = us_infantry_idx(BENGHAZI);
-    dest = us_infantry_idx(TRIPOLI);
-
-    game->marine_infantry[dest] += game->marine_infantry[i];
-    game->marine_infantry[i] = 0;
-    game->arab_infantry[dest] += game->arab_infantry[i];
-    game->arab_infantry[i] = 0;
+    move_hamets_army(game, BENGHAZI, TRIPOLI);
 
     return NULL;
 }
@@ -890,6 +896,108 @@ static bool hamets_army_in_alexandria(struct game_state *game)
     return hamets_army_at(game, ALEXANDRIA);
 }
 
+static const char *hamet_move_frigates(struct game_state *game,
+                                       enum locations dest)
+{
+    char *line;
+    struct frigate_move moves[3];
+    int move_count = 0;
+    bool first = true;
+    char *loc_str;
+    char *zone_str;
+    char *quantity_str;
+    enum locations loc;
+    enum move_type type;
+    int quantity;
+    const char *err;
+
+    cprintf(BOLD WHITE, "Move up to three frigates to the %s harbor: "
+            "[location] [patrol/harbor] [quantity]...\n", location_str(dest));
+    prompt();
+
+    line = input_getline();
+
+    while (true) {
+        if (move_count > 3) {
+            free(line);
+            return "Too many moves specified";
+        }
+        if (first) {
+            loc_str = strtok(line, sep);
+            first = false;
+        } else {
+            loc_str = strtok(NULL, sep);
+        }
+
+        if (loc_str == NULL) {
+            break;
+        }
+
+        zone_str = strtok(NULL, sep);
+        if (zone_str == NULL) {
+            free(line);
+            return "Patrol Zone or Harbor not specified for move";
+        }
+
+        quantity_str = strtok(NULL, sep);
+        if (quantity_str == NULL) {
+            free(line);
+            return "No move quantity specified";
+        }
+
+        loc = parse_location(loc_str);
+        if (loc == NUM_LOCATIONS) {
+            free(line);
+            return "Invalid location specified";
+        }
+
+        type = parse_move_type(zone_str);
+        if (type == INVALID_MOVE_TYPE) {
+            free(line);
+            return "Invalid zone specified. Must be harbor or patrol";
+        }
+
+        quantity = strtol(quantity_str, NULL, 10);
+        if (errno != 0 || quantity == 0) {
+            free(line);
+            return "Invalid move quantity specified";
+        }
+
+        moves[move_count].from = loc;
+        moves[move_count].from_type = type;
+        moves[move_count].quantity = quantity;
+
+        moves[move_count].to = dest;
+        moves[move_count].to_type = HARBOR;
+        move_count++;
+    }
+
+    err = validate_moves(game, moves, move_count, 3);
+    if (err != NULL) {
+        free(line);
+        return err;
+    }
+
+    move_frigates(game, moves, move_count);
+
+    free(line);
+    return NULL;
+}
+
+static const char *play_eaton_attacks_derne(struct game_state *game)
+{
+    const char *err;
+
+    err = hamet_move_frigates(game, DERNE);
+    if (err != NULL) {
+        return err;
+    }
+
+    move_hamets_army(game, ALEXANDRIA, DERNE);
+
+    return NULL;
+}
+
 struct card eaton_attacks_derne = {
     .name = "General Eaton Attacks Derne",
     .text = "Move Hamet’s Army from Alexandria "
@@ -897,12 +1005,27 @@ struct card eaton_attacks_derne = {
     "frigates to the harbor of Derne. Resolve "
     "the Battle for Derne!",
     .remove_after_use = true,
-    .playable = hamets_army_in_alexandria
+    .playable = hamets_army_in_alexandria,
+    .play = play_eaton_attacks_derne
 };
 
 static bool hamets_army_in_derne(struct game_state *game)
 {
     return hamets_army_at(game, DERNE);
+}
+
+static const char *play_eaton_attacks_benghazi(struct game_state *game)
+{
+    const char *err;
+
+    err = hamet_move_frigates(game, BENGHAZI);
+    if (err != NULL) {
+        return err;
+    }
+
+    move_hamets_army(game, DERNE, BENGHAZI);
+
+    return NULL;
 }
 
 struct card eaton_attacks_benghazi = {
@@ -912,7 +1035,8 @@ struct card eaton_attacks_benghazi = {
     "frigates to the harbor of Benghazi. "
     "Resolve the Battle for Benghazi!",
     .remove_after_use = true,
-    .playable = hamets_army_in_derne
+    .playable = hamets_army_in_derne,
+    .play = play_eaton_attacks_benghazi
 };
 
 static struct card *us_core[US_CORE_CARD_COUNT] = {
