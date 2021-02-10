@@ -768,6 +768,7 @@ static bool check_add_card_to_event_line(struct game_state *game,
     if (!card->playable(game) &&
         (card == &storms || card == &second_storms ||
          card == &philly_runs_aground || card == &tripoli_acquires_corsairs)) {
+        tbot_log_append(game, "T-Bot adds [%s] to the event line\n", card->name);
         for (i = TBOT_EVENT_ADD_IDX; i < TBOT_EVENT_MAX; i++) {
             if (tbot_event_line[i] == NULL) {
                 tbot_event_line[i] = card;
