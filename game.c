@@ -576,7 +576,7 @@ void game_loop(struct game_state *game)
         if (game->victory_or_death &&
             game->t_infantry[trip_infantry_idx(TRIPOLI)] == 0) {
             display_game(game);
-            cprintf(ITALIC BLUE, "US Victory via Assault on Tripoli\n");
+            cprintf(ITALIC BLUE, "US Victory via Assault on Tripoli!\n");
             exit(0);
         }
 
