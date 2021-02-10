@@ -654,7 +654,7 @@ static const char *play_brainbridge_supplies_intel(struct game_state *game)
     }
 
     idx = strtol(idx_str, NULL, 10);
-    if (errno != 0 || idx < 0 || idx >= game->discard_size) {
+    if ((idx == 0 && errno != 0) || idx < 0 || idx >= game->discard_size) {
         free(line);
         return "Invalid card number";
     }

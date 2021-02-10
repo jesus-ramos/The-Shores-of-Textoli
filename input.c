@@ -14,7 +14,7 @@ static const char *play_command(struct game_state *game, bool core)
     }
 
     card_idx = strtol(idx_str, NULL, 10);
-    if (errno != 0) {
+    if (errno != 0 && card_idx == 0) {
         return "Invalid card index";
     }
 
@@ -37,7 +37,8 @@ static const char *discard_command(struct game_state *game)
     }
 
     card_idx = strtol(idx_str, NULL, 10);
-    if (errno != 0 || card_idx < 0 || card_idx >= game->hand_size) {
+    if ((card_idx == 0 &&errno != 0) || card_idx < 0 ||
+        card_idx >= game->hand_size) {
         return "Invalid card index";
     }
 

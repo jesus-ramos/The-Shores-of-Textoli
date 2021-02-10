@@ -315,7 +315,7 @@ static const char *discard_down(struct game_state *game)
 
     line = input_getline();
     idx = strtol(line, NULL, 10);
-    if (errno != 0 || idx < 0 || idx >= game->hand_size) {
+    if ((idx == 0 && errno != 0) || idx < 0 || idx >= game->hand_size) {
         free(line);
         return "Invalid card number";
     }
