@@ -24,7 +24,9 @@ static void print_harbor(struct game_state *game, enum locations location)
         cprintf(BOLD BLUE, "F");
         count++;
     }
-    if (location == TRIPOLI) {
+
+    /* Display damaged US frigates during the assault on tripoli */
+    if (location == TRIPOLI && location_battle(game, location) == NAVAL_BATTLE) {
         for (i = 0; i < game->us_damaged_frigates; i++) {
             cprintf(ITALIC BLUE, "F");
             count++;

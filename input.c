@@ -199,7 +199,8 @@ const char *parse_moves(struct frigate_move *moves, int *num_moves)
 const char *parse_damage_assignment(struct game_state *game,
                                     enum locations location,
                                     enum move_type type,
-                                    int num_hits)
+                                    int num_hits,
+                                    enum battle_type btype)
 {
     char *line;
     int destroy_frigates = 0;
@@ -210,15 +211,18 @@ const char *parse_damage_assignment(struct game_state *game,
     int len;
     int i;
     const char *err;
+    const char *btype_str = (btype == NAVAL_BATTLE) ? "naval" : "ground";
+
+    assert(btype == NAVAL_BATTLE || btype == GROUND_BATTLE);
 
     if (num_hits == 0) {
         return NULL;
     }
 
-    cprintf(BOLD WHITE, "Assign %d hits for battle at %s %s:"
+    cprintf(BOLD WHITE, "Assign %d hits for %s battle at %s %s:"
             "(F to destroy a frigate, f to damage a frigate, "
             "G/g to destroy a gunboat, A/a for arab infantry, "
-            "M/m for US marines)\n", num_hits,
+            "M/m for US marines)\n", num_hits, btype_str,
             location_str(location), move_type_str(type));
     prompt();
     line = input_getline();

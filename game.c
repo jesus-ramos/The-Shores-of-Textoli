@@ -380,7 +380,8 @@ static const char *resolve_naval_battle(struct game_state *game,
     damage = tbot_resolve_naval_battle(game, location, successes);
     display_game(game); /* After resolving the bot battle turn refresh the
                          * display */
-    while ((err = parse_damage_assignment(game, location, HARBOR, damage))) {
+    while ((err = parse_damage_assignment(game, location, HARBOR, damage,
+                                          NAVAL_BATTLE))) {
         cprintf(BOLD RED, "%s\n", err);
     }
 
@@ -483,7 +484,8 @@ static const char *resolve_ground_combat(struct game_state *game,
         damage = tbot_resolve_ground_combat(game, location, successes);
         display_game(game);
 
-        while ((err = parse_damage_assignment(game, location, HARBOR, damage))) {
+        while ((err = parse_damage_assignment(game, location, HARBOR, damage,
+                                              GROUND_BATTLE))) {
             cprintf(BOLD RED, "%s\n", err);
         }
 
