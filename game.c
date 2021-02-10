@@ -79,11 +79,7 @@ bool game_handle_intercept(struct game_state *game, enum locations location)
         rolls += FRIGATE_DICE * game->patrol_frigates[location];
     }
 
-    while (rolls--) {
-        if (rolld6() == 6) {
-            successes++;
-        }
-    }
+    successes = rolld6s(rolls, 6);
 
     if (has_trip_allies(location)) {
         corsairs = &game->t_allies[location];
@@ -371,12 +367,7 @@ static const char *resolve_naval_battle(struct game_state *game,
     }
 
     dice += game->assigned_gunboats;
-
-    while (dice--) {
-        if (rolld6() == 6) {
-            successes++;
-        }
-    }
+    successes = rolld6s(dice, 6);
 
     damage = tbot_resolve_naval_battle(game, location, successes);
     display_game(game); /* After resolving the bot battle turn refresh the
@@ -409,12 +400,7 @@ static const char *resolve_naval_bombardment(struct game_state *game,
     }
 
     dice += game->assigned_gunboats;
-
-    while (dice--) {
-        if (rolld6() == 6) {
-            successes++;
-        }
-    }
+    successes = rolld6s(dice, 6);
 
     /* We just handle the damage for the tbot since there's only one way to
      * assign it */
@@ -438,7 +424,6 @@ static const char *resolve_ground_combat(struct game_state *game,
     int idx;
     int successes;
     int dice;
-    int roll;
     int damage;
     const char *err;
     enum battle_type btype;
@@ -469,19 +454,10 @@ static const char *resolve_ground_combat(struct game_state *game,
             dice += 2;
         }
 
-        while (dice--) {
-            roll = rolld6();
-            if (roll == 6 || (sharpshooters_played && roll == 5)) {
-                successes++;
-            }
-        }
+        successes = rolld6s(dice, (sharpshooters_played) ? 5 : 6);
 
         dice = game->arab_infantry[idx];
-        while (dice--) {
-            if (rolld6() == 6) {
-                successes++;
-            }
-        }
+        successes += rolld6s(dice, 6);
 
         damage = tbot_resolve_ground_combat(game, location, successes);
         display_game(game);

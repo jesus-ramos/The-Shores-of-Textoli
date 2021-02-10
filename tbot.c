@@ -460,11 +460,7 @@ static const char *play_storms(struct game_state *game)
     assert(score_idx != -1);
 
     rolls = game->patrol_frigates[score_idx];
-    while (rolls--) {
-        if (rolld6() == 6) {
-            successes++;
-        }
-    }
+    successes = rolld6s(rolls, 6);
 
     if (successes > 0) {
         game->patrol_frigates[score_idx]--;
@@ -513,16 +509,8 @@ static const char *play_tripoli_attacks(struct game_state *game)
     int us_success = 0;
     int trip_success = 0;
 
-    while (us_dice--) {
-        if (rolld6() == 6) {
-            us_success++;
-        }
-    }
-    while (trip_dice--) {
-        if (rolld6() == 6) {
-            trip_success++;
-        }
-    }
+    us_success = rolld6s(us_dice, 6);
+    trip_success = rolld6s(trip_dice, 6);
 
     if (trip_success >= 1) {
         game->patrol_frigates[TRIPOLI]--;
@@ -740,11 +728,7 @@ int tbot_resolve_naval_battle(struct game_state *game, enum locations location,
         }
     }
 
-    while (dice--) {
-        if (rolld6() == 6) {
-            hits++;
-        }
-    }
+    hits = rolld6s(dice, 6);
 
     apply_damage(game, location, NAVAL_BATTLE, damage);
     return hits;
@@ -756,11 +740,7 @@ int tbot_resolve_ground_combat(struct game_state *game, enum locations location,
     int hits = 0;
     int dice = game->t_infantry[trip_infantry_idx(location)];
 
-    while (dice--) {
-        if (rolld6() == 6) {
-            hits++;
-        }
-    }
+    hits = rolld6s(dice, 6);
 
     apply_damage(game, location, GROUND_BATTLE, damage);
     return hits;
@@ -843,7 +823,6 @@ static bool tbot_process_event_line(struct game_state *game)
 
 static void pirate_raid(struct game_state *game, enum locations location)
 {
-    int i;
     int successes = 0;
     int raid_count;
     bool intercepted = game_handle_intercept(game, location);
@@ -859,12 +838,7 @@ static void pirate_raid(struct game_state *game, enum locations location)
         raid_count += 3;
     }
 
-    for (i = 0; i < raid_count; i++) {
-        if (rolld6() == 6) {
-            successes++;
-        }
-    }
-
+    successes = rolld6s(raid_count, 5);
     game->pirated_gold += successes;
 
     if (successes > 0 && tbot_check_play_battle_card(&merchant_ship_converted)) {
@@ -973,11 +947,7 @@ void tbot_plays_mercenaries_desert(struct game_state *game)
     }
 
     dice = game->arab_infantry[idx];
-    while (dice--) {
-        if (rolld6() == 6) {
-            remove++;
-        }
-    }
+    remove = rolld6s(dice, 6);
 
     game->arab_infantry[idx] -= remove;
 }

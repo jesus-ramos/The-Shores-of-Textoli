@@ -163,6 +163,19 @@ static inline unsigned int rolld6()
     return rand() % 6 + 1;
 }
 
+static inline unsigned int rolld6s(int count, int success)
+{
+    int successes = 0;
+
+    while (count--) {
+        if (rolld6() >= success) {
+            successes++;
+        }
+    }
+
+    return successes;
+}
+
 static inline const char *season_str(enum seasons season)
 {
     switch (season) {
