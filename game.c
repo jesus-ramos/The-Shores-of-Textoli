@@ -364,9 +364,10 @@ static const char *resolve_naval_battle(struct game_state *game,
 
     prebles_boys_played = check_play_battle_card(game, &prebles_boys);
     if (prebles_boys_played) {
-        dice = game->us_frigates[location] * 3;
+        dice = (game->us_frigates[location] + game->us_damaged_frigates) * 3;
     } else {
-        dice = game->us_frigates[location] * FRIGATE_DICE;
+        dice = (game->us_frigates[location] + game->us_damaged_frigates) *
+            FRIGATE_DICE;
     }
 
     dice += game->assigned_gunboats;
@@ -395,7 +396,8 @@ static const char *resolve_naval_bombardment(struct game_state *game,
                                              enum locations location)
 {
     int idx;
-    int dice = game->us_frigates[location] * FRIGATE_DICE;
+    int dice = (game->us_frigates[location] + game->us_damaged_frigates) *
+        FRIGATE_DICE;
     int successes = 0;
     const char *err;
 
