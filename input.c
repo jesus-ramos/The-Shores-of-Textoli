@@ -13,8 +13,7 @@ static const char *play_command(struct game_state *game, bool core)
         return "Missing card number";
     }
 
-    card_idx = strtol(idx_str, NULL, 10);
-    if (errno != 0 && card_idx == 0) {
+    if (!game_strtol(idx_str, &card_idx)) {
         return "Invalid card index";
     }
 
@@ -36,8 +35,7 @@ static const char *discard_command(struct game_state *game)
         return "Missing card number";
     }
 
-    card_idx = strtol(idx_str, NULL, 10);
-    if ((card_idx == 0 &&errno != 0) || card_idx < 0 ||
+    if (!game_strtol(idx_str, &card_idx) || card_idx < 0 ||
         card_idx >= game->hand_size) {
         return "Invalid card index";
     }
@@ -127,7 +125,7 @@ const char *parse_moves(struct frigate_move *moves, int *num_moves)
     char *from_str, *from_type;
     char *to_str, *to_type;
     char *count_str;
-    unsigned int count;
+    int count;
     struct frigate_move *move;
 
     cprintf(BOLD WHITE, "Specify moves in the form [from location] "
@@ -177,8 +175,7 @@ const char *parse_moves(struct frigate_move *moves, int *num_moves)
             return "Missing move quantity";
         }
 
-        count = strtol(count_str, NULL, 10);
-        if (errno != 0 || count == 0) {
+        if (!game_strtol(count_str, &count) || count == 0) {
             free(line);
             return "Invalid move value or count";
         }
@@ -269,8 +266,7 @@ const char *parse_assign_gunboats(struct game_state *game,
     prompt();
     line = input_getline();
 
-    gunboats = strtol(line, NULL, 10);
-    if (errno != 0) {
+    if (!game_strtol(line, &gunboats)) {
         free(line);
         return "Invalid number provided";
     }

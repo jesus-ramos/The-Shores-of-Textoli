@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -144,6 +145,24 @@ static inline bool tripolitan_win(struct game_state *game)
 {
     return game->destroyed_us_frigates >= DESTROYED_FRIGATES_WIN ||
         game->pirated_gold >= GOLD_WIN;
+}
+
+static inline bool game_strtol(const char *str, int *num)
+{
+    char *endptr;
+    int res;
+
+    errno = 0;
+    res = strtol(str, &endptr, 10);
+    /* We could also check for ERANGE but it's unlikely someone will enter a
+     * number that big right...
+     */
+    if (endptr == str || *endptr != 0 || errno != 0) {
+        return false;
+    }
+
+    *num = res;
+    return true;
 }
 
 static inline bool game_draw(struct game_state *game)

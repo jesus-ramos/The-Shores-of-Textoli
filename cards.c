@@ -362,6 +362,7 @@ static const char *play_show_of_force(struct game_state *game)
     char *from_str;
     char *from_type_str;
     char *quantity_str;
+    int count;
     int i;
     int frigates_moved = 0;
     const char *err;
@@ -406,7 +407,6 @@ static const char *play_show_of_force(struct game_state *game)
 
         moves[num_moves].from = parse_location(from_str);
         moves[num_moves].from_type = parse_move_type(from_type_str);
-        moves[num_moves].quantity = strtol(quantity_str, NULL, 10);
         if (moves[num_moves].from == NUM_LOCATIONS) {
             free(line);
             return "Invalid location for move provided";
@@ -415,10 +415,12 @@ static const char *play_show_of_force(struct game_state *game)
             free(line);
             return "Invalid location zone provided";
         }
-        if (errno != 0) {
+        if (!game_strtol(quantity_str, &count)) {
             free(line);
             return "Invalid move quantity provided";
         }
+
+        moves[num_moves].quantity = count;
 
         moves[num_moves].to = ally_loc;
         moves[num_moves].to_type = HARBOR;
@@ -653,8 +655,7 @@ static const char *play_brainbridge_supplies_intel(struct game_state *game)
         return "No card selected";
     }
 
-    idx = strtol(idx_str, NULL, 10);
-    if ((idx == 0 && errno != 0) || idx < 0 || idx >= game->discard_size) {
+    if (!game_strtol(idx_str, &idx) || idx < 0 || idx >= game->discard_size) {
         free(line);
         return "Invalid card number";
     }
@@ -960,8 +961,7 @@ static const char *hamet_move_frigates(struct game_state *game,
             return "Invalid zone specified. Must be harbor or patrol";
         }
 
-        quantity = strtol(quantity_str, NULL, 10);
-        if (errno != 0 || quantity == 0) {
+        if (!game_strtol(quantity_str, &quantity)) {
             free(line);
             return "Invalid move quantity specified";
         }
