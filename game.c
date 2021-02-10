@@ -644,15 +644,38 @@ const char *assign_damage(struct game_state *game, enum locations location,
         }
 
         total_dmg = damage_frigates + 2 * destroy_frigates;
-        total_hp = *frigate_ptr * 2 + game->used_gunboats;
+        total_hp = *frigate_ptr * 2 + game->used_gunboats +
+            game->us_damaged_frigates;
 
         if (total_dmg > total_hp ||
             (damage_frigates + destroy_frigates > *frigate_ptr)) {
             return "Incorrect damage assignment";
         }
 
-        *frigate_ptr -= destroy_frigates + damage_frigates;
-        if (game->year <= 1805) {
+        if (*frigate_ptr < destroy_frigates) {
+            return "Destroying too many frigates";
+        }
+
+        /* First destroy any frigates */
+        *frigate_ptr -= destroy_frigates;
+
+        if (*frigate_ptr < damage_frigates) {
+            /* This is only allowed in the assault on tripoli, flow over damaged
+             * frigates and destroy previously damaged ones
+             */
+            assert(game->victory_or_death);
+            damage_frigates -= *frigate_ptr;
+            *frigate_ptr = 0;
+            assert(game->us_damaged_frigates >= damage_frigates);
+            game->us_damaged_frigates -= damage_frigates;
+            damage_frigates = 0;
+        } else {
+            *frigate_ptr -= damage_frigates;
+        }
+
+        if (game->victory_or_death) {
+            game->us_damaged_frigates += damage_frigates;
+        } else if (game->year <= 1805) {
             game->turn_track_frigates[year_to_frigate_idx(game->year + 1)] +=
                 damage_frigates;
         }

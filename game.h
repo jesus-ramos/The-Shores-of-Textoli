@@ -97,6 +97,8 @@ struct game_state {
     unsigned int assigned_gunboats;
     enum locations battle_loc;
     bool victory_or_death;
+    /* Track assault on tripoli damaged frigates */
+    unsigned int us_damaged_frigates;
 };
 
 #define MAX_FRIGATE_MOVES (8)
