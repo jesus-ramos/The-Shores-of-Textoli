@@ -810,6 +810,8 @@ draw_new_card:
         return true;
     }
 
+    tbot_log_append(game, "T-Bot discarded [%s] to Raid or Build\n", card->name);
+
     return false;
 }
 
