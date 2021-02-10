@@ -275,7 +275,7 @@ static void print_year_track(struct game_state *game)
             cprintf(WHITE, ")");
         }
     }
-    cprintf(BOLD WHITE, "] ");
+    cprintf(BOLD WHITE, " ] ");
 }
 
 void display_game(struct game_state *game)
