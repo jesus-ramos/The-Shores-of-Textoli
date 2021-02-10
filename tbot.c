@@ -804,6 +804,7 @@ draw_new_card:
     }
 
     if (card->playable(game)) {
+        tbot_log_append(game, "T-Bot drew and played [%s]\n", card->name);
         assert(card->play);
         card->play(game);
         return true;
@@ -838,7 +839,8 @@ static void pirate_raid(struct game_state *game, enum locations location)
     int raid_count;
     bool intercepted = game_handle_intercept(game, location);
 
-    if (intercepted && tbot_check_play_battle_card(game, &books_overboard)) {
+    if (intercepted && (game->year >= 1805 &&
+                        tbot_check_play_battle_card(game, &books_overboard))) {
         discard_from_hand(game, rand() % game->hand_size);
     }
 
@@ -937,6 +939,7 @@ static void raid_or_build(struct game_state *game)
 static inline void tbot_reset_log(struct game_state *game)
 {
     game->log_ptr = game->tbot_log;
+    game->log_ptr[0] = 0;
 }
 
 void tbot_do_turn(struct game_state *game)
