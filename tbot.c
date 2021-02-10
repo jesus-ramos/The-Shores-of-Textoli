@@ -841,10 +841,14 @@ static void pirate_raid(struct game_state *game, enum locations location)
     int successes = 0;
     int raid_count;
     bool intercepted = game_handle_intercept(game, location);
+    int card_idx;
 
     if (intercepted && (game->year >= 1805 &&
                         tbot_check_play_battle_card(game, &books_overboard))) {
-        discard_from_hand(game, rand() % game->hand_size);
+        card_idx = rand() % game->hand_size;
+        tbot_log_append(game, "T-Bot discards [%s] from US Hand\n",
+                        game->us_hand[card_idx]->name);
+        discard_from_hand(game, card_idx);
     }
 
     raid_count = (location == TRIPOLI) ? game->t_corsairs_tripoli :
