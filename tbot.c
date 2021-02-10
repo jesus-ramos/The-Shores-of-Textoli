@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdio.h>
 
 #include "cards.h"
 #include "game.h"
@@ -8,6 +9,11 @@
 #define TBOT_EVENT_ADD_IDX (4)
 
 #define array_size(arr) (sizeof(arr) / sizeof(arr[0]))
+
+#define tbot_log_append(game, ...)                                      \
+    game->log_ptr += snprintf(game->log_ptr,                            \
+                              TBOT_LOG_LEN - (game->log_ptr - game->tbot_log), \
+                              __VA_ARGS__);
 
 static void activate_ally(struct game_state *game, enum locations location)
 {
@@ -169,13 +175,16 @@ static struct card *tbot_battle_cards[] = {
     &mercenaries_desert
 };
 
-static bool tbot_check_play_battle_card(struct card *card)
+static bool tbot_check_play_battle_card(struct game_state *game,
+                                        struct card *card)
 {
     int i;
 
     for (i = 0; i < array_size(tbot_battle_cards); i++) {
         if (tbot_battle_cards[i] == card) {
             tbot_battle_cards[i] = NULL;
+            tbot_log_append(game, "T-Bot plays [%s] as a battle card\n",
+                            card->name);
             return true;
         }
     }
@@ -595,7 +604,7 @@ static const char *play_philly_runs_aground(struct game_state *game)
 {
     int roll = rolld6();
     bool uncharted_waters_played =
-        tbot_check_play_battle_card(&uncharted_waters);
+        tbot_check_play_battle_card(game, &uncharted_waters);
 
     if (uncharted_waters_played) {
         roll = max(roll, rolld6());
@@ -722,7 +731,7 @@ int tbot_resolve_naval_battle(struct game_state *game, enum locations location,
             game->t_corsairs_tripoli;
         if ((game->year == 1805 && game->season != WINTER) ||
             game->year == 1806 || game->victory_or_death) {
-            if (tbot_check_play_battle_card(&the_guns_of_tripoli)) {
+            if (tbot_check_play_battle_card(game, &the_guns_of_tripoli)) {
                 dice += 12;
             }
         }
@@ -812,6 +821,8 @@ static bool tbot_process_event_line(struct game_state *game)
         card = tbot_event_line[i];
         assert(!card || (card->play && card->playable));
         if (card && card->playable(game)) {
+            tbot_log_append(game, "T-Bot plays [%s] from the event line\n",
+                            card->name);
             card->play(game);
             tbot_event_line[i] = NULL;
             return true;
@@ -827,21 +838,25 @@ static void pirate_raid(struct game_state *game, enum locations location)
     int raid_count;
     bool intercepted = game_handle_intercept(game, location);
 
-    if (intercepted && tbot_check_play_battle_card(&books_overboard)) {
+    if (intercepted && tbot_check_play_battle_card(game, &books_overboard)) {
         discard_from_hand(game, rand() % game->hand_size);
     }
 
     raid_count = (location == TRIPOLI) ? game->t_corsairs_tripoli :
         game->t_allies[location];
 
-    if (tbot_check_play_battle_card(&happy_hunting)) {
+    if (tbot_check_play_battle_card(game, &happy_hunting)) {
         raid_count += 3;
     }
 
     successes = rolld6s(raid_count, 5);
     game->pirated_gold += successes;
 
-    if (successes > 0 && tbot_check_play_battle_card(&merchant_ship_converted)) {
+    tbot_log_append(game, "T-Bot raids from %s and pirates %d gold\n",
+                    location_str(location), successes);
+
+    if (successes > 0 &&
+        tbot_check_play_battle_card(game, &merchant_ship_converted)) {
         game->t_corsairs_tripoli++;
     }
 }
@@ -893,6 +908,7 @@ static void raid_or_build(struct game_state *game)
     }
 
     if (max_score == -1) {
+        tbot_log_append(game, "T-Bot builds a corsair in Tripoli\n");
         game->t_corsairs_tripoli++;
         return;
     }
@@ -918,8 +934,15 @@ static void raid_or_build(struct game_state *game)
     }
 }
 
+static inline void tbot_reset_log(struct game_state *game)
+{
+    game->log_ptr = game->tbot_log;
+}
+
 void tbot_do_turn(struct game_state *game)
 {
+    tbot_reset_log(game);
+
     if (tbot_process_event_line(game)) {
         return;
     }
@@ -942,7 +965,7 @@ void tbot_plays_mercenaries_desert(struct game_state *game)
     int idx = us_infantry_idx(DERNE);
     int remove = 0;
 
-    if (!tbot_check_play_battle_card(&mercenaries_desert)) {
+    if (!tbot_check_play_battle_card(game, &mercenaries_desert)) {
         return;
     }
 

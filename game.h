@@ -99,6 +99,12 @@ struct game_state {
     bool victory_or_death;
     /* Track assault on tripoli damaged frigates */
     unsigned int us_damaged_frigates;
+
+    struct {
+#define TBOT_LOG_LEN (2048)
+        char tbot_log[TBOT_LOG_LEN];
+        char *log_ptr;
+    };
 };
 
 #define MAX_FRIGATE_MOVES (8)

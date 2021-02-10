@@ -105,6 +105,11 @@ static void print_harbor(struct game_state *game, enum locations location)
     }
 }
 
+static void print_tbot_log(struct game_state *game)
+{
+    cprintf(ITALIC RED, "%s", game->tbot_log);
+}
+
 static void print_patrol_zone(struct game_state *game, enum locations location)
 {
     int i;
@@ -293,6 +298,8 @@ void display_game(struct game_state *game)
 
     print_separator(size.ws_col);
     print_locations(game);
+    print_separator(size.ws_col);
+    print_tbot_log(game);
     print_separator(size.ws_col);
     print_core_cards(game);
     print_separator(size.ws_col);
