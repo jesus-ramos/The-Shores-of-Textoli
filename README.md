@@ -36,6 +36,20 @@ All the locations in the game. All locations contain a harbor and some contain a
 Patrol Zone where frigates can intercept pirates. During battle active battle
 locations will be highlighted in red.
 
+F - Frigates on the map, US frigates in blue and Tripoli Frigates in red. When
+frigates are damaged they will be unhighlighted.
+
+C - Tripolitan corsairs displayed in red, allies of Tripoli will be displayed in
+orange.
+
+G - US Gunboats
+
+A - Arab Infantry that is part of Hamet's Army
+
+M - US Marine Infantry that is part of Hamet's Army
+
+P - Tripolitan infantry
+
 T-Bot Log:
 
 When you first start the game this area will be empty but during the game it
