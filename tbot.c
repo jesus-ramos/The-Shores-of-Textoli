@@ -775,8 +775,8 @@ static bool check_add_card_to_event_line(struct game_state *game,
                 return true;
             }
         }
+        assert(false); /* Should have found a free slot */
     }
-
 
     return false;
 }
