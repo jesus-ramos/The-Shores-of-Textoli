@@ -573,11 +573,15 @@ void game_loop(struct game_state *game)
         game->used_gunboats = 0;
         game->assigned_gunboats = 0;
 
-        if (game->victory_or_death &&
-            game->t_infantry[trip_infantry_idx(TRIPOLI)] == 0) {
+        if (game->victory_or_death) {
             display_game(game);
-            cprintf(ITALIC BLUE, "US Victory via Assault on Tripoli!\n");
-            exit(0);
+            if (game->t_infantry[trip_infantry_idx(TRIPOLI)] == 0) {
+                cprintf(ITALIC BLUE, "US Victory via Assault on Tripoli!\n");
+            } else {
+                cprintf(ITALIC RED, "The assault on Tripoli has failed! "
+                        "The tripolitan pirates have claimed victory\n");
+            }
+            exit(EXIT_SUCCESS);
         }
 
         tbot_do_turn(game);
