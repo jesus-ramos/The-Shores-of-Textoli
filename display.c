@@ -225,6 +225,7 @@ static void print_separator(int count)
     for (i = 0; i < count; i++) {
         cprintf(BOLD CYAN, "-");
     }
+    printf("\n");
 }
 
 static void print_season(struct game_state *game)
