@@ -277,6 +277,7 @@ const char *parse_assign_gunboats(struct game_state *game,
     }
 
     game->assigned_gunboats = gunboats;
+    game->used_gunboats += gunboats;
 
     free(line);
     return NULL;

@@ -339,7 +339,6 @@ static void return_to_malta(struct game_state *game,
 {
     game->us_frigates[MALTA] += game->us_frigates[location];
     game->us_frigates[location] = 0;
-    game->used_gunboats += game->assigned_gunboats;
     game->assigned_gunboats = 0;
 }
 
@@ -663,8 +662,13 @@ const char *assign_damage(struct game_state *game, enum locations location,
                 damage_frigates;
         }
 
+        assert(destroy_gunboats <= game->us_gunboats &&
+               destroy_gunboats <= game->assigned_gunboats &&
+               destroy_gunboats <= game->used_gunboats);
+
         game->us_gunboats -= destroy_gunboats;
         game->used_gunboats -= destroy_gunboats;
+        game->assigned_gunboats -= destroy_gunboats;
 
         game->destroyed_us_frigates += destroy_frigates;
     } else { /* Ground combat */
@@ -672,6 +676,10 @@ const char *assign_damage(struct game_state *game, enum locations location,
             destroy_arabs > game->arab_infantry[idx]) {
             return "Incorrect damage assignment";
         }
+
+        assert(destroy_marines <= game->marine_infantry[idx] &&
+               destroy_arabs <= game->arab_infantry[idx]);
+
         game->marine_infantry[idx] -= destroy_marines;
         game->arab_infantry[idx] -= destroy_arabs;
     }
