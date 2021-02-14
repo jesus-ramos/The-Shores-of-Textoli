@@ -351,6 +351,20 @@ static inline unsigned int *tripoli_corsair_ptr(struct game_state *game,
     return &game->t_corsairs_gibraltar;
 }
 
+static inline unsigned int *us_frigate_ptr(struct game_state *game,
+                                           enum locations location,
+                                           enum move_type zone)
+{
+    assert(location < NUM_LOCATIONS);
+    assert(zone == HARBOR || zone == PATROL_ZONE);
+
+    if (zone == HARBOR) {
+        return &game->us_frigates[location];
+    }
+    assert(has_patrol_zone(location));
+    return &game->patrol_frigates[location];
+}
+
 static inline unsigned int max(unsigned int a, unsigned int b)
 {
     return (a > b) ? a : b;
@@ -366,15 +380,21 @@ void game_loop(struct game_state *game);
 bool build_gunboat(struct game_state *game);
 const char *game_move_ships(struct game_state *game, int allowed_moves);
 bool game_handle_intercept(struct game_state *game, enum locations location);
-const char *assign_damage(struct game_state *game, enum locations location,
-                          enum move_type type, int destroy_frigates,
-                          int damage_frigates, int destroy_gunboats,
-                          int destroy_marines, int destroy_arabs);
 enum battle_type location_battle(struct game_state *game,
                                  enum locations location);
 const char *validate_moves(struct game_state *game, struct frigate_move *moves,
                            int num_moves, int allowed_moves);
 void move_frigates(struct game_state *game, struct frigate_move *moves,
                    int num_moves);
+bool try_auto_assign_damage(struct game_state *game, enum locations location,
+                            enum move_type zone, int num_hits,
+                            enum battle_type btype);
+const char *assign_naval_damage(struct game_state *game, enum locations location,
+                                enum move_type zone, int num_hits,
+                                int destroy_frigates, int damage_frigates,
+                                int destroy_gunboats);
+const char *assign_ground_damage(struct game_state *game,
+                                 enum locations location, int num_hits,
+                                 int destroy_marines, int destroy_arabs);
 
 #endif /* GAME_H */

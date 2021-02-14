@@ -216,9 +216,13 @@ const char *parse_damage_assignment(struct game_state *game,
         return NULL;
     }
 
+    if (try_auto_assign_damage(game, location, type, num_hits, btype)) {
+        return NULL;
+    }
+
     cprintf(BOLD WHITE, "Assign %d hits for %s battle at %s %s:"
-            "(F to destroy a frigate, f to damage a frigate, "
-            "G/g to destroy a gunboat, A/a for arab infantry, "
+            "(F to destroy a frigate, f to damage a frigate or destroy a damaged"
+            "frigate, G/g to destroy a gunboat, A/a for arab infantry, "
             "M/m for US marines)\n", num_hits, btype_str,
             location_str(location), move_type_str(type));
     prompt();
@@ -242,8 +246,14 @@ const char *parse_damage_assignment(struct game_state *game,
         }
     }
 
-    err = assign_damage(game, location, type, destroy_frigates, damage_frigates,
-                        destroy_gunboats, destroy_marines, destroy_arabs);
+    if (btype == NAVAL_BATTLE) {
+        err = assign_naval_damage(game, location, type, num_hits,
+                                  destroy_frigates, damage_frigates,
+                                  destroy_gunboats);
+    } else {
+        err = assign_ground_damage(game, location, num_hits, destroy_marines,
+                                   destroy_arabs);
+    }
 
     free(line);
     return err;

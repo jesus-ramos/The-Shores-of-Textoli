@@ -590,99 +590,123 @@ void game_loop(struct game_state *game)
     }
 }
 
-const char *assign_damage(struct game_state *game, enum locations location,
-                          enum move_type type, int destroy_frigates,
-                          int damage_frigates, int destroy_gunboats,
-                          int destroy_marines, int destroy_arabs)
+static bool try_auto_assign_naval_battle(struct game_state *game,
+                                         enum locations location,
+                                         enum move_type zone, int num_hits)
 {
-    unsigned int *frigate_ptr;
-    int total_dmg;
-    int total_hp;
-    int idx = -1;
+    unsigned int *frigate_ptr = us_frigate_ptr(game, location, zone);
+    int total_hp = *frigate_ptr * 2 + game->assigned_gunboats +
+        game->us_damaged_frigates;
 
-    if ((destroy_marines || destroy_arabs) &&
-        (destroy_frigates || damage_frigates || destroy_gunboats)) {
-        return "Can't assign damage from naval battles to ground troops";
+    if (num_hits < total_hp) {
+        return false;
+    }
+
+    *frigate_ptr = 0;
+    game->used_gunboats -= game->assigned_gunboats;
+    game->assigned_gunboats = 0;
+    game->us_damaged_frigates = 0;
+
+    return true;
+}
+
+static bool try_auto_assign_ground_battle(struct game_state *game,
+                                          enum locations location,
+                                          int num_hits)
+{
+    int idx = us_infantry_idx(location);
+    int total_hp = game->marine_infantry[idx] + game->arab_infantry[idx];
+
+    if (num_hits < total_hp) {
+        return false;
+    }
+
+    game->marine_infantry[idx] = 0;
+    game->arab_infantry[idx] = 0;
+
+    return true;
+}
+
+bool try_auto_assign_damage(struct game_state *game, enum locations location,
+                            enum move_type zone, int num_hits,
+                            enum battle_type btype)
+{
+    if (btype == NAVAL_BATTLE) {
+        return try_auto_assign_naval_battle(game, location, zone, num_hits);
+    }
+    return try_auto_assign_ground_battle(game, location, num_hits);
+}
+
+const char *assign_naval_damage(struct game_state *game, enum locations location,
+                                enum move_type zone, int num_hits,
+                                int destroy_frigates, int damage_frigates,
+                                int destroy_gunboats)
+{
+    unsigned int *frigate_ptr = us_frigate_ptr(game, location, zone);
+    int rem;
+
+    if (num_hits != destroy_frigates * 2 + damage_frigates + destroy_gunboats) {
+        return "You must assign all damage for the battle";
+    }
+
+    if ((destroy_frigates + damage_frigates) > (*frigate_ptr +
+                                                game->us_damaged_frigates)) {
+        return "Destroying and damaging more frigates than we have at the "
+            "location";
     }
 
     if (destroy_gunboats > game->assigned_gunboats) {
-        return "Not enough participating gunboats to destroy";
+        return "Not enough gunboats to destroy at the location";
     }
 
-    if (destroy_marines > 0 || destroy_arabs > 0) {
-        if (!has_us_infantry(location)) {
-            return "No infantry at this location to destroy";
-        }
-        idx = us_infantry_idx(location);
+    game->us_gunboats -= destroy_gunboats;
+    game->assigned_gunboats -= destroy_gunboats;
+    game->used_gunboats -= destroy_gunboats;
+
+    game->destroyed_us_frigates += destroy_frigates;
+
+    *frigate_ptr -= destroy_frigates;
+    if (*frigate_ptr < damage_frigates) {
+        assert(game->victory_or_death);
+        rem = damage_frigates - *frigate_ptr;
+        *frigate_ptr = 0;
+        game->destroyed_us_frigates += rem;
+        game->us_damaged_frigates -= rem;
+        damage_frigates = 0;
+    } else {
+        *frigate_ptr -= damage_frigates;
     }
 
-    /* Naval combat */
-    if (idx == -1) {
-        if (type == HARBOR) {
-            frigate_ptr = &game->us_frigates[location];
-        } else {
-            assert(has_patrol_zone(location));
-            frigate_ptr = &game->patrol_frigates[location];
-        }
-
-        total_dmg = damage_frigates + 2 * destroy_frigates;
-        total_hp = *frigate_ptr * 2 + game->used_gunboats +
-            game->us_damaged_frigates;
-
-        if (total_dmg > total_hp ||
-            (damage_frigates + destroy_frigates > *frigate_ptr)) {
-            return "Incorrect damage assignment";
-        }
-
-        if (*frigate_ptr < destroy_frigates) {
-            return "Destroying too many frigates";
-        }
-
-        /* First destroy any frigates */
-        *frigate_ptr -= destroy_frigates;
-
-        if (*frigate_ptr < damage_frigates) {
-            /* This is only allowed in the assault on tripoli, flow over damaged
-             * frigates and destroy previously damaged ones
-             */
-            assert(game->victory_or_death);
-            damage_frigates -= *frigate_ptr;
-            *frigate_ptr = 0;
-            assert(game->us_damaged_frigates >= damage_frigates);
-            game->us_damaged_frigates -= damage_frigates;
-            damage_frigates = 0;
-        } else {
-            *frigate_ptr -= damage_frigates;
-        }
-
-        if (game->victory_or_death) {
-            game->us_damaged_frigates += damage_frigates;
-        } else if (game->year <= 1805) {
-            game->turn_track_frigates[year_to_frigate_idx(game->year + 1)] +=
-                damage_frigates;
-        }
-
-        assert(destroy_gunboats <= game->us_gunboats &&
-               destroy_gunboats <= game->assigned_gunboats &&
-               destroy_gunboats <= game->used_gunboats);
-
-        game->us_gunboats -= destroy_gunboats;
-        game->used_gunboats -= destroy_gunboats;
-        game->assigned_gunboats -= destroy_gunboats;
-
-        game->destroyed_us_frigates += destroy_frigates;
-    } else { /* Ground combat */
-        if (destroy_marines > game->marine_infantry[idx] ||
-            destroy_arabs > game->arab_infantry[idx]) {
-            return "Incorrect damage assignment";
-        }
-
-        assert(destroy_marines <= game->marine_infantry[idx] &&
-               destroy_arabs <= game->arab_infantry[idx]);
-
-        game->marine_infantry[idx] -= destroy_marines;
-        game->arab_infantry[idx] -= destroy_arabs;
+    if (game->victory_or_death) {
+        game->us_damaged_frigates += damage_frigates;
+    } else if (game->year < END_YEAR) {
+        game->turn_track_frigates[year_to_frigate_idx(game->year + 1)] +=
+            damage_frigates;
     }
+
+    return NULL;
+}
+
+const char *assign_ground_damage(struct game_state *game,
+                                 enum locations location, int num_hits,
+                                 int destroy_marines, int destroy_arabs)
+{
+    int idx = us_infantry_idx(location);
+
+    if (num_hits != destroy_marines + destroy_arabs) {
+        return "You must assign all daamge for the battle";
+    }
+
+    if (destroy_marines > game->marine_infantry[idx]) {
+        return "Assigning more damage than marines at location";
+    }
+
+    if (destroy_arabs > game->arab_infantry[idx]) {
+        return "assigning more damage than arab infantry at location";
+    }
+
+    game->marine_infantry[idx] -= destroy_marines;
+    game->arab_infantry[idx] -= destroy_arabs;
 
     return NULL;
 }
