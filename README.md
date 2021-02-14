@@ -1,6 +1,8 @@
 Implemenation of the solo game of The Shores of Tripoli by Kevin Bertram
 published by Fort Circle Games.
 
+For best results use a dark background terminal.
+
 No external dependencies. You may have to resize your terminal to get everything
 to fit best on it. If your terminal does not support extended color codes the
 ally pirate corsairs may not display in the correct color (orange).
