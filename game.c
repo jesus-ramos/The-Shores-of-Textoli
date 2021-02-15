@@ -102,7 +102,7 @@ static void advance_game_round(struct game_state *game)
 {
     unsigned int frig_idx;
 
-    if (game->year == END_YEAR && game->season == WINTER) {
+    if (game_draw(game)) {
         cprintf(ITALIC WHITE, "Game ended in a draw!\n");
         exit(0);
     }
