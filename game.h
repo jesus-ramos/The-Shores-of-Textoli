@@ -19,6 +19,7 @@ enum locations {
     ALEXANDRIA,
     MALTA,
     NUM_LOCATIONS,
+    INVALID_LOCATION = -1,
     /* Laid these out in a way that the math on these works kinda nice */
     PATROL_ZONES = TRIPOLI + 1,
     TRIP_ALLIES = TUNIS + 1,
@@ -110,18 +111,17 @@ struct game_state {
 
 #define MAX_FRIGATE_MOVES (8)
 
-/* Could use a rename */
-enum move_type {
+enum zone {
     HARBOR,
     PATROL_ZONE,
-    INVALID_MOVE_TYPE
+    INVALID_ZONE
 };
 
 struct frigate_move {
     enum locations from;
-    enum move_type from_type;
+    enum zone from_zone;
     enum locations to;
-    enum move_type to_type;
+    enum zone to_zone;
     unsigned int quantity;
 };
 
@@ -218,9 +218,9 @@ static inline const char *season_str(enum seasons season)
     }
 }
 
-static inline char *move_type_str(enum move_type type)
+static inline char *zone_str(enum zone zone)
 {
-    switch (type) {
+    switch (zone) {
         case PATROL_ZONE:
             return "Patrol Zone";
         case HARBOR:
@@ -267,7 +267,7 @@ static inline void str_tolower(char *str)
     }
 }
 
-static inline enum move_type parse_move_type(char *str)
+static inline enum zone parse_zone(char *str)
 {
     str_tolower(str);
 
@@ -276,7 +276,7 @@ static inline enum move_type parse_move_type(char *str)
     } else if (strcmp(str, "patrol") == 0) {
         return PATROL_ZONE;
     } else {
-        return INVALID_MOVE_TYPE;
+        return INVALID_ZONE;
     }
 }
 
@@ -303,7 +303,7 @@ static inline enum locations parse_location(char *str)
     } else if (strcmp(str, "malta") == 0) {
         return MALTA;
     } else {
-        return NUM_LOCATIONS;
+        return INVALID_LOCATION;
     }
 }
 
@@ -353,9 +353,9 @@ static inline unsigned int *tripoli_corsair_ptr(struct game_state *game,
 
 static inline unsigned int *us_frigate_ptr(struct game_state *game,
                                            enum locations location,
-                                           enum move_type zone)
+                                           enum zone zone)
 {
-    assert(location < NUM_LOCATIONS);
+    assert(location < NUM_LOCATIONS && location >= 0);
     assert(zone == HARBOR || zone == PATROL_ZONE);
 
     if (zone == HARBOR) {
@@ -387,10 +387,10 @@ const char *validate_moves(struct game_state *game, struct frigate_move *moves,
 void move_frigates(struct game_state *game, struct frigate_move *moves,
                    int num_moves);
 bool try_auto_assign_damage(struct game_state *game, enum locations location,
-                            enum move_type zone, int num_hits,
+                            enum zone zone, int num_hits,
                             enum battle_type btype);
 const char *assign_naval_damage(struct game_state *game, enum locations location,
-                                enum move_type zone, int num_hits,
+                                enum zone zone, int num_hits,
                                 int destroy_frigates, int damage_frigates,
                                 int destroy_gunboats);
 const char *assign_ground_damage(struct game_state *game,

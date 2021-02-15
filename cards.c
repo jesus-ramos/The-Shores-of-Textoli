@@ -307,7 +307,7 @@ static const char *play_early_deployment(struct game_state *game)
 
     line = input_getline();
     location = parse_location(line);
-    if (location == NUM_LOCATIONS) {
+    if (location == INVALID_LOCATION) {
         free(line);
         return "Invalid location";
     }
@@ -360,7 +360,7 @@ static const char *play_show_of_force(struct game_state *game)
     struct frigate_move moves[3];
     int num_moves = 0;
     char *from_str;
-    char *from_type_str;
+    char *from_zone_str;
     char *quantity_str;
     int count;
     int i;
@@ -394,8 +394,8 @@ static const char *play_show_of_force(struct game_state *game)
         if (from_str == NULL) {
             break;
         }
-        from_type_str = strtok(NULL, sep);
-        if (from_type_str == NULL) {
+        from_zone_str = strtok(NULL, sep);
+        if (from_zone_str == NULL) {
             free(line);
             return "Missing location zone, patrol or harbor";
         }
@@ -406,12 +406,12 @@ static const char *play_show_of_force(struct game_state *game)
         }
 
         moves[num_moves].from = parse_location(from_str);
-        moves[num_moves].from_type = parse_move_type(from_type_str);
-        if (moves[num_moves].from == NUM_LOCATIONS) {
+        moves[num_moves].from_zone = parse_zone(from_zone_str);
+        if (moves[num_moves].from == INVALID_LOCATION) {
             free(line);
             return "Invalid location for move provided";
         }
-        if (moves[num_moves].from_type == INVALID_MOVE_TYPE) {
+        if (moves[num_moves].from_zone == INVALID_ZONE) {
             free(line);
             return "Invalid location zone provided";
         }
@@ -423,7 +423,7 @@ static const char *play_show_of_force(struct game_state *game)
         moves[num_moves].quantity = count;
 
         moves[num_moves].to = ally_loc;
-        moves[num_moves].to_type = HARBOR;
+        moves[num_moves].to_zone = HARBOR;
         num_moves++;
     }
 
@@ -466,10 +466,10 @@ static const char *play_tribute_paid(struct game_state *game)
 {
     char *line;
     char *from_str;
-    char *type_str;
+    char *zone_str;
     char *to_str;
     enum locations from_loc;
-    enum move_type from_type;
+    enum zone from_zone;
     enum locations to_loc;
 
     cprintf(BOLD, "Choose location to move frigate from and location to move "
@@ -483,8 +483,8 @@ static const char *play_tribute_paid(struct game_state *game)
         return "No location to move frigate from provided";
     }
 
-    type_str = strtok(NULL, sep);
-    if (type_str == NULL) {
+    zone_str = strtok(NULL, sep);
+    if (zone_str == NULL) {
         free(line);
         return "No harbor or patrol zone specified";
     }
@@ -496,13 +496,13 @@ static const char *play_tribute_paid(struct game_state *game)
     }
 
     from_loc = parse_location(from_str);
-    if (from_loc == NUM_LOCATIONS) {
+    if (from_loc == INVALID_LOCATION) {
         free(line);
         return "Invalid location to move frigate from";
     }
 
-    from_type = parse_move_type(type_str);
-    if (from_type == INVALID_MOVE_TYPE) {
+    from_zone = parse_zone(zone_str);
+    if (from_zone == INVALID_ZONE) {
         free(line);
         return "Invalid harbor or patrol zone specified";
     }
@@ -519,7 +519,7 @@ static const char *play_tribute_paid(struct game_state *game)
         return "No tripolitan allies at that location";
     }
 
-    if (from_type == PATROL_ZONE) {
+    if (from_zone == PATROL_ZONE) {
         if (!has_patrol_zone(from_loc)) {
             free(line);
             return "Location to move from does not have a patrol zone";
@@ -911,7 +911,7 @@ static const char *hamet_move_frigates(struct game_state *game,
     char *zone_str;
     char *quantity_str;
     enum locations loc;
-    enum move_type type;
+    enum zone zone;
     int quantity;
     const char *err;
 
@@ -950,13 +950,13 @@ static const char *hamet_move_frigates(struct game_state *game,
         }
 
         loc = parse_location(loc_str);
-        if (loc == NUM_LOCATIONS) {
+        if (loc == INVALID_LOCATION) {
             free(line);
             return "Invalid location specified";
         }
 
-        type = parse_move_type(zone_str);
-        if (type == INVALID_MOVE_TYPE) {
+        zone = parse_zone(zone_str);
+        if (zone == INVALID_ZONE) {
             free(line);
             return "Invalid zone specified. Must be harbor or patrol";
         }
@@ -967,11 +967,11 @@ static const char *hamet_move_frigates(struct game_state *game,
         }
 
         moves[move_count].from = loc;
-        moves[move_count].from_type = type;
+        moves[move_count].from_zone = zone;
         moves[move_count].quantity = quantity;
 
         moves[move_count].to = dest;
-        moves[move_count].to_type = HARBOR;
+        moves[move_count].to_zone = HARBOR;
         move_count++;
     }
 

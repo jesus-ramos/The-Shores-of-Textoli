@@ -42,11 +42,10 @@ const char *handle_input(struct game_state *game);
 const char *parse_moves(struct frigate_move *moves, int *num_moves);
 const char *parse_damage_assignment(struct game_state *game,
                                     enum locations location,
-                                    enum move_type type,
-                                    int num_hits,
+                                    enum zone zone, int num_hits,
                                     enum battle_type btype);
 const char *parse_assign_gunboats(struct game_state *game,
                                   enum locations location,
-                                  enum move_type type);
+                                  enum zone zone);
 
 #endif /* INPUT_H */

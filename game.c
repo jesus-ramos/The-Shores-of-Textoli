@@ -38,7 +38,7 @@ void init_game_state(struct game_state *game, unsigned int seed)
     }
 
     /* No active battle */
-    game->battle_loc = NUM_LOCATIONS;
+    game->battle_loc = INVALID_LOCATION;
 
     init_game_cards(game);
 }
@@ -185,13 +185,13 @@ void move_frigates(struct game_state *game, struct frigate_move *moves,
 
     for (i = 0; i < num_moves; i++) {
         move = &moves[i];
-        if (move->from_type == HARBOR) {
+        if (move->from_zone == HARBOR) {
             game->us_frigates[move->from] -= move->quantity;
         } else {
             game->patrol_frigates[move->from] -= move->quantity;
         }
 
-        if (move->to_type == HARBOR) {
+        if (move->to_zone == HARBOR) {
             game->us_frigates[move->to] += move->quantity;
         } else {
             game->patrol_frigates[move->to] += move->quantity;
@@ -214,20 +214,20 @@ const char *validate_moves(struct game_state *game,
     for (i = 0; i < num_moves; i++) {
         move = &moves[i];
 
-        if (move->from == NUM_LOCATIONS || move->to == NUM_LOCATIONS) {
+        if (move->from == INVALID_LOCATION || move->to == INVALID_LOCATION) {
             return "Invalid location name";
         }
-        if (move->from_type == INVALID_MOVE_TYPE ||
-            move->to_type == INVALID_MOVE_TYPE) {
+        if (move->from_zone == INVALID_ZONE ||
+            move->to_zone == INVALID_ZONE) {
             return "Invalid move type";
         }
 
-        if (move->from_type == HARBOR &&
+        if (move->from_zone == HARBOR &&
             game->us_frigates[move->from] < move->quantity) {
             return "Invalid move quantity";
         }
 
-        if (move->from_type == PATROL_ZONE) {
+        if (move->from_zone == PATROL_ZONE) {
             if (!has_patrol_zone(move->from)) {
                 return "Move location does not have a patrol zone";
             }
@@ -236,7 +236,7 @@ const char *validate_moves(struct game_state *game,
             }
         }
 
-        if (move->to_type == PATROL_ZONE && !has_patrol_zone(move->to)) {
+        if (move->to_zone == PATROL_ZONE && !has_patrol_zone(move->to)) {
             return "Move location does not have a patrol zone";
         }
 
@@ -480,7 +480,7 @@ static const char *resolve_battle(struct game_state *game,
 {
     enum battle_type btype;
 
-    if (battle_loc == NUM_LOCATIONS) {
+    if (battle_loc == INVALID_LOCATION) {
         return "Invalid location";
     }
 
@@ -565,10 +565,10 @@ void game_loop(struct game_state *game)
             display_game(game);
             print_err_msg(err_msg);
             err_msg = handle_battles(game);
-            game->battle_loc = NUM_LOCATIONS;
+            game->battle_loc = INVALID_LOCATION;
             check_tripoli_win(game);
         }
-        game->battle_loc = NUM_LOCATIONS;
+        game->battle_loc = INVALID_LOCATION;
         game->used_gunboats = 0;
         game->assigned_gunboats = 0;
 
@@ -592,7 +592,7 @@ void game_loop(struct game_state *game)
 
 static bool try_auto_assign_naval_battle(struct game_state *game,
                                          enum locations location,
-                                         enum move_type zone, int num_hits)
+                                         enum zone zone, int num_hits)
 {
     unsigned int *frigate_ptr = us_frigate_ptr(game, location, zone);
     int total_hp = *frigate_ptr * 2 + game->assigned_gunboats +
@@ -628,8 +628,7 @@ static bool try_auto_assign_ground_battle(struct game_state *game,
 }
 
 bool try_auto_assign_damage(struct game_state *game, enum locations location,
-                            enum move_type zone, int num_hits,
-                            enum battle_type btype)
+                            enum zone zone, int num_hits, enum battle_type btype)
 {
     if (btype == NAVAL_BATTLE) {
         return try_auto_assign_naval_battle(game, location, zone, num_hits);
@@ -638,7 +637,7 @@ bool try_auto_assign_damage(struct game_state *game, enum locations location,
 }
 
 const char *assign_naval_damage(struct game_state *game, enum locations location,
-                                enum move_type zone, int num_hits,
+                                enum zone zone, int num_hits,
                                 int destroy_frigates, int damage_frigates,
                                 int destroy_gunboats)
 {

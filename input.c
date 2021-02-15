@@ -122,8 +122,8 @@ const char *parse_moves(struct frigate_move *moves, int *num_moves)
     int move_idx = 0;
     bool first = true;
     char *line;
-    char *from_str, *from_type;
-    char *to_str, *to_type;
+    char *from_str, *from_zone;
+    char *to_str, *to_zone;
     char *count_str;
     int count;
     struct frigate_move *move;
@@ -151,8 +151,8 @@ const char *parse_moves(struct frigate_move *moves, int *num_moves)
             return "Too many moves";
         }
 
-        from_type = strtok(NULL, sep);
-        if (from_type == NULL) {
+        from_zone = strtok(NULL, sep);
+        if (from_zone == NULL) {
             free(line);
             return "Missing from type (location or harbor)";
         }
@@ -163,8 +163,8 @@ const char *parse_moves(struct frigate_move *moves, int *num_moves)
             return "Missing destination location name";
         }
 
-        to_type = strtok(NULL, sep);
-        if (to_type == NULL) {
+        to_zone = strtok(NULL, sep);
+        if (to_zone == NULL) {
             free(line);
             return "Missing destination type (location or harbor)";
         }
@@ -182,9 +182,9 @@ const char *parse_moves(struct frigate_move *moves, int *num_moves)
 
         move = &moves[move_idx++];
         move->from = parse_location(from_str);
-        move->from_type = parse_move_type(from_type);
+        move->from_zone = parse_zone(from_zone);
         move->to = parse_location(to_str);
-        move->to_type = parse_move_type(to_type);
+        move->to_zone = parse_zone(to_zone);
         move->quantity = count;
     }
 
@@ -195,8 +195,7 @@ const char *parse_moves(struct frigate_move *moves, int *num_moves)
 
 const char *parse_damage_assignment(struct game_state *game,
                                     enum locations location,
-                                    enum move_type type,
-                                    int num_hits,
+                                    enum zone zone, int num_hits,
                                     enum battle_type btype)
 {
     char *line;
@@ -216,7 +215,7 @@ const char *parse_damage_assignment(struct game_state *game,
         return NULL;
     }
 
-    if (try_auto_assign_damage(game, location, type, num_hits, btype)) {
+    if (try_auto_assign_damage(game, location, zone, num_hits, btype)) {
         return NULL;
     }
 
@@ -224,7 +223,7 @@ const char *parse_damage_assignment(struct game_state *game,
             "(F to destroy a frigate, f to damage a frigate or destroy a damaged"
             "frigate, G/g to destroy a gunboat, A/a for arab infantry, "
             "M/m for US marines)\n", num_hits, btype_str,
-            location_str(location), move_type_str(type));
+            location_str(location), zone_str(zone));
     prompt();
     line = input_getline();
 
@@ -247,7 +246,7 @@ const char *parse_damage_assignment(struct game_state *game,
     }
 
     if (btype == NAVAL_BATTLE) {
-        err = assign_naval_damage(game, location, type, num_hits,
+        err = assign_naval_damage(game, location, zone, num_hits,
                                   destroy_frigates, damage_frigates,
                                   destroy_gunboats);
     } else {
@@ -261,7 +260,7 @@ const char *parse_damage_assignment(struct game_state *game,
 
 const char *parse_assign_gunboats(struct game_state *game,
                                   enum locations location,
-                                  enum move_type type)
+                                  enum zone zone)
 {
     char *line;
     int gunboats;
@@ -272,7 +271,7 @@ const char *parse_assign_gunboats(struct game_state *game,
     }
 
     cprintf(BOLD WHITE, "Choose how many gunboats to bring to the battle at "
-            "%s %s\n", location_str(location), move_type_str(type));
+            "%s %s\n", location_str(location), zone_str(zone));
     prompt();
     line = input_getline();
 

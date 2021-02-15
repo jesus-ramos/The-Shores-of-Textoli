@@ -38,7 +38,7 @@ static void print_harbor(struct game_state *game, enum locations location)
             cprintf(BOLD BLUE, "G");
             count++;
         }
-    } else if (location == MALTA && game->battle_loc == NUM_LOCATIONS) {
+    } else if (location == MALTA && game->battle_loc == INVALID_LOCATION) {
         for (i = 0; i < game->us_gunboats - game->used_gunboats; i++) {
             cprintf(BOLD BLUE, "G");
             count++;
