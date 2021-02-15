@@ -17,7 +17,11 @@ static struct option longopts[] =
 
 static void usage()
 {
-    printf("Something\n");
+    const char *usage_str =
+        "-s --seed : Set the game seed. Default: time based seed\n"
+        "-h --help : Print this usage text\n";
+
+    printf("%s", usage_str);
 }
 
 void crash_handler(int signal)
@@ -39,7 +43,7 @@ int main(int argc, char **argv)
     signal(SIGSEGV, crash_handler);
     signal(SIGABRT, crash_handler);
 
-    while ((ch = getopt_long(argc, argv, "s:", longopts, NULL)) != -1) {
+    while ((ch = getopt_long(argc, argv, "hs:", longopts, NULL)) != -1) {
         switch (ch) {
             case 's':
                 seed = strtol(optarg, NULL, 10);
