@@ -806,7 +806,6 @@ draw_new_card:
 
     if (card->playable(game)) {
         tbot_log_append(game, "T-Bot drew and played [%s]\n", card->name);
-        assert(card->play);
         card->play(game);
         return true;
     }
