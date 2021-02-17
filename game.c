@@ -69,7 +69,7 @@ bool game_handle_intercept(struct game_state *game, enum locations location)
         return false;;
     }
 
-    if (game->patrol_frigates[location]) {
+    if (intercepted) {
         lieutenant_played = check_play_battle_card(game, &lieutenant_in_pursuit);
     }
 
