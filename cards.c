@@ -187,13 +187,11 @@ struct card marine_sharpshooters = {
 
 static bool peace_treaty_playable(struct game_state *game)
 {
-    unsigned int trip_derne_idx = trip_infantry_idx(DERNE);
-
     return is_date_on_or_past(game, 1805, FALL) &&
         game->t_allies[ALGIERS] == 0 && game->t_allies[TANGIER] == 0 &&
         game->t_allies[TUNIS] == 0 &&
         hamets_army_at(game, DERNE) &&
-        game->t_infantry[trip_derne_idx] == 0;
+        game->t_frigates == 0;
 }
 
 static const char *play_treaty(struct game_state *game)
