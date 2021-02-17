@@ -37,7 +37,7 @@ void crash_handler(int signal)
 int main(int argc, char **argv)
 {
     struct game_state game;
-    unsigned int seed = 0;
+    int seed = 0;
     int ch;
 
     signal(SIGSEGV, crash_handler);
@@ -46,8 +46,7 @@ int main(int argc, char **argv)
     while ((ch = getopt_long(argc, argv, "hs:", longopts, NULL)) != -1) {
         switch (ch) {
             case 's':
-                seed = strtol(optarg, NULL, 10);
-                if (errno != 0) {
+                if (!game_strtol(optarg, &seed)) {
                     fprintf(stderr, "Invalid seed value\n");
                     exit(1);
                 }
