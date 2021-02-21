@@ -99,7 +99,7 @@ static void print_harbor(struct game_state *game, enum locations location)
         }
     }
 
-    if (count <= HARBOR_PAD_SIZE) {
+    if (count < HARBOR_PAD_SIZE) {
         padlen = HARBOR_PAD_SIZE - count;
         printf("%*s", padlen, "");
     }
