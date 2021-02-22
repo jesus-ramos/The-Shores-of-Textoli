@@ -1,5 +1,7 @@
 #include <errno.h>
+#if !defined(__CYGWIN__) && !defined(__MINGW32__)
 #include <execinfo.h>
+#endif /* !defined(__CYGWIN__) && !defined(__MINGW32__) */
 #include <getopt.h>
 #include <signal.h>
 #include <stdio.h>
@@ -24,7 +26,8 @@ static void usage()
     printf("%s", usage_str);
 }
 
-void crash_handler(int signal)
+#if !defined(__CYGWIN__) && !defined(__MINGW32__)
+static void crash_handler(int signal)
 {
     void *callstack[16];
     int frames = 0;
@@ -33,6 +36,7 @@ void crash_handler(int signal)
     backtrace_symbols_fd(callstack, frames, STDERR_FILENO);
     exit(EXIT_FAILURE);
 }
+#endif /* !defined(__CYGWIN__) && !defined(__MINGW32__) */
 
 int main(int argc, char **argv)
 {
@@ -40,8 +44,10 @@ int main(int argc, char **argv)
     int seed = 0;
     int ch;
 
+#if !defined(__CYGWIN__) && !defined(__MINGW32__)
     signal(SIGSEGV, crash_handler);
     signal(SIGABRT, crash_handler);
+#endif /* !defined(__CYGWIN__) && !defined(__MINGW32__) */
 
     while ((ch = getopt_long(argc, argv, "hs:", longopts, NULL)) != -1) {
         switch (ch) {
