@@ -282,8 +282,10 @@ static void print_year_track(struct game_state *game)
 void display_game(struct game_state *game)
 {
     struct winsize size;
+    int ret;
 
-    ioctl(STDOUT_FILENO, TIOCGWINSZ, &size);
+    ret = ioctl(STDOUT_FILENO, TIOCGWINSZ, &size);
+    assert(ret == 0);
 
     clear_screen();
 
