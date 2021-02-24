@@ -15,51 +15,35 @@ static void print_harbor(struct game_state *game, enum locations location)
     int idx;
     int padlen;
 
+#define cprintf_count(color, str, quantity)        \
+    for (i = 0; i < quantity; i++) {               \
+        cprintf(color, str);                       \
+        count++;                                   \
+    }
+
     if (location_battle(game, location) != BTYPE_NONE) {
         cprintf(BOLD ITALIC RED, "Harbor: ");
     } else {
         cprintf(BOLD WHITE, "Harbor: ");
     }
-    for (i = 0; i < game->us_frigates[location]; i++) {
-        cprintf(BOLD BLUE, "F");
-        count++;
-    }
+    cprintf_count(BOLD BLUE, "F", game->us_frigates[location]);
 
     /* Display damaged US frigates during the assault on tripoli */
     if (location == TRIPOLI && location_battle(game, location) == NAVAL_BATTLE) {
-        for (i = 0; i < game->us_damaged_frigates; i++) {
-            cprintf(ITALIC BLUE, "F");
-            count++;
-        }
+        cprintf_count(ITALIC BLUE, "F", game->us_damaged_frigates);
     }
 
     if (location == game->battle_loc) {
-        for (i = 0; i < game->assigned_gunboats; i++) {
-            cprintf(BOLD BLUE, "G");
-            count++;
-        }
+        cprintf_count(BOLD BLUE, "G", game->assigned_gunboats);
     } else if (location == MALTA && game->battle_loc == INVALID_LOCATION) {
-        for (i = 0; i < game->us_gunboats - game->used_gunboats; i++) {
-            cprintf(BOLD BLUE, "G");
-            count++;
-        }
-        for (i = 0; i < game->used_gunboats; i++) {
-            cprintf(ITALIC BLUE, "G");
-            count++;
-        }
+        cprintf_count(BOLD BLUE, "G", game->us_gunboats - game->used_gunboats);
+        cprintf_count(ITALIC BLUE, "G", game->used_gunboats);
     }
 
     if (has_us_infantry(location)) {
         idx = us_infantry_idx(location);
-
-        for (i = 0; i < game->marine_infantry[idx]; i++) {
-            cprintf(BOLD BLUE, "M");
-            count++;
-        }
-        for (i = 0; i < game->arab_infantry[idx]; i++) {
-            cprintf(BOLD GREEN, "A");
-            count++;
-        }
+        cprintf_count(BOLD BLUE, "M", game->marine_infantry[idx]);
+        cprintf_count(BOLD GREEN, "A", game->arab_infantry[idx]);
     }
 
     if (count > 0) {
@@ -72,37 +56,27 @@ static void print_harbor(struct game_state *game, enum locations location)
     } else if (location == GIBRALTAR) {
         trip_corsairs = game->t_corsairs_gibraltar;
     }
-    for (i = 0; i < trip_corsairs; i++) {
-        cprintf(BOLD RED, "C");
-        count++;
-    }
+    cprintf_count(BOLD RED, "C", trip_corsairs);
 
     if (location == TRIPOLI) {
-        for (i = 0; i < game->t_frigates; i++) {
-            cprintf(BOLD RED, "F");
-            count++;
-        }
+        cprintf_count(BOLD RED, "F", game->t_frigates);
     }
 
     if (has_trip_allies(location)) {
-        for (i = 0; i < game->t_allies[location]; i++) {
-            cprintf(BOLD ORANGE, "C");
-            count++;
-        }
+        cprintf_count(BOLD ORANGE, "C", game->t_allies[location]);
     }
 
     if (has_trip_infantry(location)) {
         idx = trip_infantry_idx(location);
-        for (i = 0; i < game->t_infantry[idx]; i++) {
-            cprintf(BOLD RED, "P");
-            count++;
-        }
+        cprintf_count(BOLD RED, "P", game->t_infantry[idx]);
     }
 
     if (count < HARBOR_PAD_SIZE) {
         padlen = HARBOR_PAD_SIZE - count;
         printf("%*s", padlen, "");
     }
+
+#undef cprintf_count
 }
 
 static void print_tbot_log(struct game_state *game)
