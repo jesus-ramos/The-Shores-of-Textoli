@@ -39,7 +39,8 @@ static inline bool yn_prompt(const char *msg)
 }
 
 const char *handle_input(struct game_state *game);
-const char *parse_moves(struct frigate_move *moves, int *num_moves);
+const char *parse_moves(struct frigate_move *moves, int *num_moves,
+                        int allowed_moves);
 const char *parse_damage_assignment(struct game_state *game,
                                     enum locations location,
                                     enum zone zone, int num_hits,

@@ -255,7 +255,7 @@ const char *game_move_ships(struct game_state *game, int allowed_moves)
     int num_moves;
     const char *err;
 
-    err = parse_moves(moves, &num_moves);
+    err = parse_moves(moves, &num_moves, allowed_moves);
     if (err) {
         return err;
     }

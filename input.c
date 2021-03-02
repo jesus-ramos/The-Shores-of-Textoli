@@ -117,7 +117,8 @@ const char *handle_input(struct game_state *game)
     return ret;
 }
 
-const char *parse_moves(struct frigate_move *moves, int *num_moves)
+const char *parse_moves(struct frigate_move *moves, int *num_moves,
+                        int allowed_moves)
 {
     int move_idx = 0;
     bool first = true;
@@ -128,6 +129,7 @@ const char *parse_moves(struct frigate_move *moves, int *num_moves)
     int count;
     struct frigate_move *move;
 
+    cprintf(BOLD WHITE, "You can move up to %d frigates\n", allowed_moves);
     cprintf(BOLD WHITE, "Specify moves in the form [from location] "
             "[harbor/patrol] [destination location] [harbor/patrol] "
             "[quantity]\n");
@@ -154,7 +156,7 @@ const char *parse_moves(struct frigate_move *moves, int *num_moves)
         from_zone = strtok(NULL, sep);
         if (from_zone == NULL) {
             free(line);
-            return "Missing from type (location or harbor)";
+            return "Missing from zone (location or harbor)";
         }
 
         to_str = strtok(NULL, sep);
@@ -166,7 +168,7 @@ const char *parse_moves(struct frigate_move *moves, int *num_moves)
         to_zone = strtok(NULL, sep);
         if (to_zone == NULL) {
             free(line);
-            return "Missing destination type (location or harbor)";
+            return "Missing destination zone (location or harbor)";
         }
 
         count_str = strtok(NULL, sep);
