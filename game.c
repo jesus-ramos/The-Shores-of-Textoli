@@ -701,7 +701,7 @@ const char *assign_ground_damage(struct game_state *game,
     }
 
     if (destroy_arabs > game->arab_infantry[idx]) {
-        return "assigning more damage than arab infantry at location";
+        return "Assigning more damage than arab infantry at location";
     }
 
     game->marine_infantry[idx] -= destroy_marines;
