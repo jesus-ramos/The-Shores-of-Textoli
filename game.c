@@ -491,6 +491,8 @@ static const char *resolve_battle(struct game_state *game,
 
     if (btype != GROUND_BATTLE) {
         game->gunboat_loc = battle_loc;
+    } else {
+        game->gunboat_loc = INVALID_LOCATION;
     }
 
     switch (btype) {
