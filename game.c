@@ -38,7 +38,7 @@ void init_game_state(struct game_state *game, unsigned int seed)
     }
 
     /* No active battle */
-    game->battle_loc = INVALID_LOCATION;
+    game->gunboat_loc = INVALID_LOCATION;
 
     init_game_cards(game);
 }
@@ -489,7 +489,9 @@ static const char *resolve_battle(struct game_state *game,
         return "No battle is occurring at this location";
     }
 
-    game->battle_loc = battle_loc;
+    if (btype != GROUND_BATTLE) {
+        game->gunboat_loc = battle_loc;
+    }
 
     switch (btype) {
         case NAVAL_BATTLE:
@@ -565,10 +567,9 @@ void game_loop(struct game_state *game)
             display_game(game);
             print_err_msg(err_msg);
             err_msg = handle_battles(game);
-            game->battle_loc = INVALID_LOCATION;
             check_tripoli_win(game);
         }
-        game->battle_loc = INVALID_LOCATION;
+        game->gunboat_loc = INVALID_LOCATION;
         game->used_gunboats = 0;
         game->assigned_gunboats = 0;
 

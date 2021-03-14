@@ -97,7 +97,7 @@ struct game_state {
     /* Battle info */
     unsigned int used_gunboats;
     unsigned int assigned_gunboats;
-    enum locations battle_loc;
+    enum locations gunboat_loc; /* Current gunboat assigned location */
     bool victory_or_death;
     /* Track assault on tripoli damaged frigates */
     unsigned int us_damaged_frigates;
