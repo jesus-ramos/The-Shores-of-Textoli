@@ -129,7 +129,6 @@ enum battle_type location_battle(struct game_state *game,
     bool us_frigates = game->us_frigates[location] > 0;
     bool us_marines = false;
     bool arab_infantry = false;
-
     bool trip_infantry = false;
     bool trip_frigates = false;
     bool trip_corsairs = false;
