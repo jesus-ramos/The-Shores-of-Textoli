@@ -54,15 +54,15 @@ int main(int argc, char **argv)
             case 's':
                 if (!game_strtol(optarg, &seed)) {
                     fprintf(stderr, "Invalid seed value\n");
-                    exit(1);
+                    exit(EXIT_FAILURE);
                 }
                 break;
             case 'h':
                 usage();
-                exit(0);
+                exit(EXIT_SUCCESS);
             default:
                 usage();
-                exit(1);
+                exit(EXIT_FAILURE);
         }
     }
 

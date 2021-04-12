@@ -104,7 +104,7 @@ static void advance_game_round(struct game_state *game)
 
     if (game_draw(game)) {
         cprintf(ITALIC WHITE, "Game ended in a draw!\n");
-        exit(0);
+        exit(EXIT_SUCCESS);
     }
 
     if (game->season == WINTER) {
@@ -537,7 +537,7 @@ static void check_tripoli_win(struct game_state *game)
     if (tripolitan_win(game)) {
         display_game(game); /* Re-render the window to show wincons */
         cprintf(ITALIC RED, "The tripolitan pirates have won!\n");
-        exit(0);
+        exit(EXIT_SUCCESS);
     }
 }
 

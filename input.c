@@ -95,7 +95,7 @@ static const char *parse_command(struct game_state *game, char *line)
         return help_command();
     } else if (strcmp(command, "quit") == 0 || strcmp(command, "q") == 0) {
         if (yn_prompt("Quit?")) {
-            exit(0);
+            exit(EXIT_SUCCESS);
         }
         return NULL;
     } else {
