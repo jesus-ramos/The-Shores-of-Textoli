@@ -66,7 +66,7 @@ bool game_handle_intercept(struct game_state *game, enum locations location)
     }
 
     if (frig_count == 0) {
-        return false;;
+        return false;
     }
 
     if (intercepted) {
