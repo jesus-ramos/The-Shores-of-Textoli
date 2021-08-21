@@ -241,7 +241,7 @@ const char *parse_damage_assignment(struct game_state *game,
             destroy_marines++;
         } else if (line[i] == 'A' || line[i] == 'a') {
             destroy_arabs++;
-        }else if (line[i] != ' ') {
+        } else if (line[i] != ' ') {
             free(line);
             return "Invalid character found for assigning damage";
         }

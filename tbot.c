@@ -11,9 +11,10 @@
 #define array_size(arr) (sizeof(arr) / sizeof(arr[0]))
 
 #define tbot_log_append(game, ...)                                      \
-    game->log_ptr += snprintf(game->log_ptr,                            \
-                              TBOT_LOG_LEN - (game->log_ptr - game->tbot_log), \
-                              __VA_ARGS__);
+    game->log_ptr +=                                                    \
+        snprintf(game->log_ptr,                                         \
+                 TBOT_LOG_LEN - (game->log_ptr - game->tbot_log),       \
+                 __VA_ARGS__);
 
 static void activate_ally(struct game_state *game, enum locations location)
 {
@@ -110,11 +111,12 @@ static void apply_damage(struct game_state *game, enum locations location,
                 game->t_damaged_frigates;
         }
     } else {
+        /* Unreachable */
         assert(false);
     }
 }
 
-/* Battle cards */
+/* Battle cards, these are used directly when applicable */
 struct card books_overboard = {
     .name = "US Signal Books Overboard",
     .text = "Playable after any Interception Roll that "
@@ -165,7 +167,6 @@ struct card mercenaries_desert = {
     "to the Supply"
 };
 
-/* Yeah these are globals but I'm a bit lazy */
 static struct card *tbot_battle_cards[] = {
     &books_overboard,
     &uncharted_waters,
@@ -515,11 +516,8 @@ static const char *play_tripoli_attacks(struct game_state *game)
     int us_dice = (prebles_boys_played) ? 3 : FRIGATE_DICE; /* only 1 ship in
                                                               * the zone */
     int trip_dice = game->t_corsairs_tripoli + game->t_frigates * FRIGATE_DICE;
-    int us_success = 0;
-    int trip_success = 0;
-
-    us_success = rolld6s(us_dice, 6);
-    trip_success = rolld6s(trip_dice, 6);
+    int us_success = rolld6s(us_dice, 6);;
+    int trip_success = rolld6s(trip_dice, 6);;
 
     if (trip_success >= 1) {
         game->patrol_frigates[TRIPOLI]--;
